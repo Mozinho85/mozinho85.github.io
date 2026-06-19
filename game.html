@@ -10,6 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+    <!-- GOOGLE ADSENSE CLIENT SCRIPT -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9853366444571043" crossorigin="anonymous"></script>
 
     <style>
@@ -19,13 +20,10 @@
             background-color: #0b1a0e;
             color: #fff;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            
-            /* Anti-Scrolling System locks viewport entirely */
             position: fixed;
             width: 100%;
             height: 100%;
             overflow: hidden;
-            
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -66,7 +64,6 @@
             box-sizing: border-box;
             padding: 20px;
             text-align: center;
-            transition: opacity 0.3s ease;
         }
 
         h1 {
@@ -85,12 +82,12 @@
             border: 2px solid rgba(255, 255, 255, 0.2);
             border-radius: 16px;
             width: 85%;
-            padding: 18px 10px;
+            padding: 16px 10px;
             color: white;
             font-size: 18px;
             font-weight: bold;
             cursor: pointer;
-            margin: 10px 0;
+            margin: 8px 0;
             transition: all 0.2s ease;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -101,7 +98,6 @@
             color: #072513;
             border-color: #fff;
             transform: scale(0.96);
-            box-shadow: 0 0 15px rgba(247, 181, 0, 0.4);
         }
 
         .grid {
@@ -109,17 +105,17 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 12px;
             width: 100%;
-            max-height: 320px; 
+            max-height: 280px; 
             overflow-y: auto;
             padding: 10px;
             box-sizing: border-box;
         }
 
-        .nation-btn {
+        .nation-btn, .ball-card {
             background: rgba(255,255,255,0.08);
             border: 2px solid rgba(255,255,255,0.15);
             border-radius: 14px;
-            padding: 15px 5px;
+            padding: 12px 5px;
             color: white;
             font-size: 13px;
             font-weight: bold;
@@ -128,27 +124,32 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
             gap: 6px;
         }
 
-        .nation-btn:active, .nation-btn.selected {
+        .nation-btn:active, .nation-btn.selected, .ball-card.selected {
             background: #f7b500;
             color: #072513;
             border-color: #fff;
             transform: scale(0.95);
-            box-shadow: 0 0 12px rgba(247, 181, 0, 0.4);
         }
 
-        .flag-tag {
-            font-size: 14px;
+        .ball-card.locked {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .flag-tag, .lock-tag {
+            font-size: 11px;
             background: rgba(255,255,255,0.2);
             padding: 2px 6px;
             border-radius: 4px;
-            margin-bottom: 4px;
             color: #fff;
         }
 
-        .nation-btn.selected .flag-tag {
+        .ball-card.selected .lock-tag {
             background: #072513;
             color: #f7b500;
         }
@@ -163,28 +164,24 @@
             border-radius: 30px;
             cursor: pointer;
             box-shadow: 0 5px 15px rgba(0,0,0,0.4);
-            margin-top: 20px;
+            margin-top: 15px;
             text-transform: uppercase;
             letter-spacing: 1px;
             transition: all 0.2s;
         }
 
+        button.action-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
         #turnIndicator {
             position: absolute;
-            top: 15px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 5;
-            background: #f7b500;
-            color: #072513;
-            font-weight: bold;
-            padding: 6px 20px;
-            border-radius: 20px;
-            font-size: 14px;
-            text-transform: uppercase;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-            pointer-events: none;
-            display: none;
+            top: 15px; left: 50%; transform: translateX(-50%);
+            z-index: 5; background: #f7b500; color: #072513; font-weight: bold;
+            padding: 6px 20px; border-radius: 20px; font-size: 14px;
+            text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            pointer-events: none; display: none;
         }
 
         #scoreboardUI {
@@ -205,13 +202,13 @@
             display: flex;
             justify-content: space-around;
             width: 100%;
-            font-size: 15px;
+            font-size: 14px;
             box-sizing: border-box;
             padding: 0 10px;
             margin-top: -40px; 
         }
         #arcadeHUD div {
-            background: rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.5);
             padding: 6px 12px;
             border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.1);
@@ -226,79 +223,49 @@
             display: none;
         }
 
-        .active-board {
-            border-color: #f7b500;
-            box-shadow: 0 0 10px rgba(247,181,0,0.3);
-        }
+        .active-board { border-color: #f7b500; }
 
-        .dot-container {
-            display: flex;
-            gap: 4px;
-            margin-top: 6px;
-            justify-content: center;
-        }
-
-        .dot {
-            width: 8px; height: 8px;
-            border-radius: 50%;
-            background: #555;
-            border: 1px solid #222;
-        }
+        .dot-container { display: flex; gap: 4px; margin-top: 6px; justify-content: center; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #555; border: 1px solid #222; }
         .dot.goal { background: #4CD964; }
         .dot.miss { background: #FF3B30; }
 
         #audioDebug {
-            position: absolute;
-            bottom: 5px;
-            left: 5px;
-            font-size: 10px;
-            color: rgba(255,255,255,0.4);
-            z-index: 100;
-            pointer-events: none;
+            position: absolute; bottom: 5px; left: 5px; font-size: 10px;
+            color: rgba(255,255,255,0.4); z-index: 100; pointer-events: none;
         }
 
-        #canvasContainer {
-            width: 100%;
-            height: 100%;
-            position: absolute;
-            top: 0; left: 0;
-            z-index: 1;
-        }
-
-        canvas {
-            width: 100%;
-            height: 100%;
-            display: block;
-        }
-
+        #canvasContainer { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
+        canvas { width: 100%; height: 100%; display: block; }
         #instructions {
-            position: absolute;
-            bottom: 35px;
-            width: 100%;
-            text-align: center;
-            font-size: 14px;
-            font-weight: 500;
-            color: rgba(255,255,255,0.85);
-            text-shadow: 1px 1px 3px #000;
-            pointer-events: none;
-            z-index: 5;
-            animation: pulse 1.5s infinite alternate;
+            position: absolute; bottom: 35px; width: 100%; text-align: center;
+            font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.85);
+            text-shadow: 1px 1px 3px #000; pointer-events: none; z-index: 5;
+        }
+
+        /* TIMER GRAPHIC FOR AD CONTINUE SCREEN */
+        #timerBox {
+            font-size: 48px;
+            font-weight: bold;
+            color: #f7b500;
+            margin: 20px 0;
+            background: rgba(0,0,0,0.4);
+            width: 80px; height: 80px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 50%; border: 3px solid #f7b500;
+        }
+
+        /* FULLSCREEN INTERSTITIAL AD SIMULATOR OVERLAY */
+        #adOverlay {
+            position: absolute; top:0; left:0; width:100%; height:100%;
+            background: #000; z-index: 500; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
         }
 
         .ad-container {
-            width: 100%;
-            height: 60px;
-            background: #072513;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            border-top: 2px solid rgba(255, 255, 255, 0.1);
-            z-index: 20;
-        }
-
-        @keyframes pulse {
-            from { opacity: 0.6; }
-            to { opacity: 1; }
+            width: 100%; height: 60px; background: #072513;
+            display: flex; justify-content: center; align-items: center;
+            border-top: 2px solid rgba(255, 255, 255, 0.1); z-index: 20;
         }
     </style>
 </head>
@@ -310,21 +277,52 @@
             <div id="audioDebug">Audio Status: Initializing...</div>
             <audio id="bgMusic" src="bgm.mp3" loop preload="auto"></audio>
 
+            <!-- SPLASH / MAIN MENU -->
             <div id="splashScreen" class="screen">
-                <h1 style="font-size: 36px; margin-bottom: 30px; color: #f7b500;">PENALTY CUP<br><span style="color:#fff; font-size:20px;">WORLD CUP 2026</span></h1>
+                <h1 style="font-size: 36px; margin-bottom: 20px; color: #f7b500;">PENALTY CUP<br><span style="color:#fff; font-size:20px;">WORLD CUP 2026</span></h1>
+                <div style="font-size: 12px; color: #aaa; margin-bottom: 15px;">Career Goals Scoreline: <span id="careerCounter" style="color:#4CD964; font-weight:bold;">0</span></div>
                 <button class="menu-btn" onclick="selectGameMode('1P')">1 Player Arcade</button>
                 <button class="menu-btn" onclick="selectGameMode('2P')" style="border-color: rgba(90, 200, 250, 0.4);">2 Player Local</button>
+                <button class="menu-btn" onclick="openLockerRoom()" style="border-color: #f7b500; font-size:15px; width:60%;">⚽ Locker Room</button>
             </div>
 
+            <!-- NATION SELECTOR -->
             <div id="selectorScreen" class="screen" style="display: none;">
                 <h1 id="selectionTitle">CHOOSE YOUR TEAM</h1>
                 <p>Select your nation to take the pitch</p>
                 <div class="grid" id="nationGrid"></div>
-                <button class="action-btn" id="startBtn" disabled style="opacity: 0.4;">CONFIRM</button>
+                <button class="action-btn" id="startBtn" disabled>CONFIRM</button>
+            </div>
+
+            <!-- LOCKER ROOM (BALL UNLOCKS) -->
+            <div id="lockerScreen" class="screen" style="display: none;">
+                <h1>LOCKER ROOM</h1>
+                <p>Unlock custom designs by hitting streaks!</p>
+                <div class="grid" id="ballGrid"></div>
+                <button class="action-btn" onclick="closeLockerRoom()">BACK TO MENU</button>
+            </div>
+
+            <!-- AD STREAK CONTINUATION POPUP -->
+            <div id="continueScreen" class="screen" style="display: none; background: rgba(7, 37, 19, 0.95); z-index: 100;">
+                <h1 style="color: #FF3B30;">STREAK AT RISK!</h1>
+                <p style="margin-bottom: 5px;">You missed the shot!</p>
+                <div style="font-size: 18px; color:#fff;">Current Streak: <span id="continueStreakVal" style="color:#f7b500; font-weight:bold;">0</span></div>
+                <div id="timerBox">5</div>
+                <button class="menu-btn" id="adContinueBtn" style="background:#f7b500; color:#072513; border:none;" onclick="triggerAdRecovery()">🎬 WATCH AD TO CONTINUE</button>
+                <div style="font-size: 12px; color: #ccc; margin-top: 5px;" id="continuesLeftTxt">Saves remaining: 3 / 3</div>
+                <button class="menu-btn" style="background:transparent; border:none; color:#aaa; font-size:14px; text-decoration:underline;" onclick="skipRecovery()">No thanks, end match</button>
+            </div>
+
+            <!-- FAKE INTERSTITIAL AD BREAK OVERLAY -->
+            <div id="adOverlay">
+                <div style="color: #aaa; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px;">Sponsored Advertisement</div>
+                <div style="font-size: 24px; color: #fff; margin-bottom: 30px;" id="adStatusTxt">Loading Ad Campaign...</div>
+                <div style="width: 50px; height: 50px; border: 5px solid #333; border-top-color: #f7b500; border-radius: 50%; animation: pulse 1s linear infinite;"></div>
             </div>
 
             <div id="turnIndicator">PLAYER 1 SHOOTING</div>
 
+            <!-- SCOREBOARD LAYER -->
             <div id="scoreboardUI">
                 <div id="arcadeHUD" style="display: none;">
                     <div>TEAM: <span id="uiTeam" style="color: #f7b500;">---</span></div>
@@ -350,13 +348,15 @@
                 <canvas id="gameCanvas"></canvas>
             </div>
 
+            <!-- GAME OVER RESULTS -->
             <div id="gameOverScreen" class="screen" style="display: none;">
-                <h1 id="winStatusText" style="color: #f7b500; text-shadow: 0 0 10px rgba(247,181,0,0.3);">MATCH OVER</h1>
-                <p id="finalScoreText" style="font-size: 18px;">Final Scoreline: 3 - 2</p>
+                <h1 id="winStatusText">MATCH OVER</h1>
+                <p id="finalScoreText">Final Scoreline: 3 - 2</p>
                 <button class="action-btn" onclick="resetToMainMenu()">MAIN MENU</button>
             </div>
         </div>
 
+        <!-- LIVE BOTTOM BANNER UNIT -->
         <div class="ad-container">
             <ins class="adsbygoogle"
                  style="display:inline-block;width:320px;height:50px"
@@ -372,98 +372,61 @@
     <script>
         const debugDiv = document.getElementById('audioDebug');
 
+        // --- CAREER AND BALL STORAGE DEFINITIONS ---
+        let careerGoals = parseInt(localStorage.getItem('wc_career_goals')) || 0;
+        let highStreak = parseInt(localStorage.getItem('wc_high_streak')) || 0;
+        let activeBallStyle = localStorage.getItem('wc_active_ball') || 'Classic';
+
+        document.getElementById('careerCounter').innerText = careerGoals;
+
+        const ballStyles = [
+            { name: 'Classic', req: 0, primary: '#ffffff', secondary: '#1a1a1a', style: 'classic' },
+            { name: 'Vortex Blue', req: 10, primary: '#00d2ff', secondary: '#003057', style: 'neon' },
+            { name: 'Ember Glow', req: 25, primary: '#ff416c', secondary: '#ff4b2b', style: 'gradient' },
+            { name: 'Emerald Spin', req: 50, primary: '#11998e', secondary: '#38ef7d', style: 'gradient' },
+            { name: 'Shadow Carbon', req: 75, primary: '#2c3e50', secondary: '#000000', style: 'carbon' },
+            { name: 'Golden Vault', req: 100, primary: '#f7b500', secondary: '#fff7ad', style: 'gold' }
+        ];
+
         // --- AUDIO ENGINE ---
         const SoundFX = {
-            ctx: null,
-            bgAudio: null,
-
+            ctx: null, bgAudio: null,
             init() {
-                if (!this.ctx) {
-                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-                }
+                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)();
                 if (!this.bgAudio) {
                     this.bgAudio = document.getElementById('bgMusic');
                     this.bgAudio.volume = 0.4; 
                     this.bgAudio.addEventListener('playing', () => debugDiv.innerText = "Audio Status: Playing bgm.mp3");
-                    this.bgAudio.addEventListener('error', (e) => debugDiv.innerText = "Audio Status: Error loading bgm.mp3 file!");
                 }
-                if (this.ctx && this.ctx.state === 'suspended') {
-                    this.ctx.resume();
-                }
+                if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
             },
-
-            startMusic() {
-                this.init();
-                let playPromise = this.bgAudio.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(err => { debugDiv.innerText = "Audio Status: Context Blocked."; });
-                }
-            },
-
-            stopMusic() {
-                if (this.bgAudio) {
-                    this.bgAudio.pause();
-                    this.bgAudio.currentTime = 0;
-                }
-            },
-
+            startMusic() { this.init(); let p = this.bgAudio.play(); if(p!==undefined) p.catch(e=>{}); },
+            stopMusic() { if(this.bgAudio) { this.bgAudio.pause(); this.bgAudio.currentTime = 0; } },
             playKick() {
-                this.init();
-                let osc = this.ctx.createOscillator();
-                let gain = this.ctx.createGain();
-                osc.connect(gain); gain.connect(this.ctx.destination);
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(140, this.ctx.currentTime);
-                osc.frequency.exponentialRampToValueAtTime(45, this.ctx.currentTime + 0.12);
-                gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+                this.init(); let osc = this.ctx.createOscillator(); let gain = this.ctx.createGain();
+                osc.connect(gain); gain.connect(this.ctx.destination); osc.type = 'sine';
+                osc.frequency.setValueAtTime(140, this.ctx.currentTime); osc.frequency.exponentialRampToValueAtTime(45, this.ctx.currentTime + 0.12);
+                gain.gain.setValueAtTime(0.5, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
                 osc.start(); osc.stop(this.ctx.currentTime + 0.12);
             },
-
             playSave() {
-                this.init();
-                let bufferSize = this.ctx.sampleRate * 0.15;
-                let buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-                let data = buffer.getChannelData(0);
-                for (let i = 0; i < bufferSize; i++) { data[i] = Math.random() * 2 - 1; }
-                let noise = this.ctx.createBufferSource(); noise.buffer = buffer;
-                let filter = this.ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.setValueAtTime(350, this.ctx.currentTime);
-                let gain = this.ctx.createGain();
-                noise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
-                gain.gain.setValueAtTime(0.6, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
-                noise.start(); noise.stop(this.ctx.currentTime + 0.15);
+                this.init(); let size = this.ctx.sampleRate * 0.15; let buf = this.ctx.createBuffer(1, size, this.ctx.sampleRate);
+                let data = buf.getChannelData(0); for (let i = 0; i < size; i++) { data[i] = Math.random() * 2 - 1; }
+                let n = this.ctx.createBufferSource(); n.buffer = buf;
+                let f = this.ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.setValueAtTime(350, this.ctx.currentTime);
+                let g = this.ctx.createGain(); n.connect(f); f.connect(g); g.connect(this.ctx.destination);
+                g.gain.setValueAtTime(0.6, this.ctx.currentTime); g.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+                n.start(); n.stop(this.ctx.currentTime + 0.15);
             },
-
             playGoal() {
-                this.init();
-                let now = this.ctx.currentTime;
+                this.init(); let now = this.ctx.currentTime;
                 [440, 554, 659].forEach((freq) => {
-                    let osc = this.ctx.createOscillator();
-                    let gain = this.ctx.createGain();
-                    osc.connect(gain); gain.connect(this.ctx.destination);
-                    osc.type = 'triangle';
-                    osc.frequency.setValueAtTime(freq, now);
-                    osc.frequency.exponentialRampToValueAtTime(freq * 1.5, now + 0.4);
-                    gain.gain.setValueAtTime(0.15, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+                    let osc = this.ctx.createOscillator(); let gain = this.ctx.createGain();
+                    osc.connect(gain); gain.connect(this.ctx.destination); osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now); osc.frequency.exponentialRampToValueAtTime(freq * 1.5, now + 0.4);
+                    gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
                     osc.start(now); osc.stop(now + 0.5);
                 });
-            },
-
-            playGameOver() {
-                this.init();
-                let osc = this.ctx.createOscillator();
-                let gain = this.ctx.createGain();
-                let filter = this.ctx.createBiquadFilter();
-                filter.type = 'lowpass'; filter.frequency.setValueAtTime(300, this.ctx.currentTime);
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(180, this.ctx.currentTime);
-                osc.frequency.linearRampToValueAtTime(70, this.ctx.currentTime + 0.6);
-                osc.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
-                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.6);
-                osc.start(); osc.stop(this.ctx.currentTime + 0.6);
             }
         };
 
@@ -480,20 +443,15 @@
         ];
 
         let activeGameMode = "1P"; 
-        let player1Nation = null;
-        let player2Nation = null;
-        let setupPhase = 1; 
+        let player1Nation = null; let player2Nation = null;
+        let setupPhase = 1; let score = 0; let streak = 0;
+        let currentKicker = 1; let currentRound = 1; let isSuddenDeath = false;
+        let p1History = []; let p2History = []; let selectedNationTmp = null;
 
-        let score = 0;
-        let streak = 0;
-
-        let currentKicker = 1; 
-        let currentRound = 1;  
-        let isSuddenDeath = false;
-        let p1History = []; 
-        let p2History = [];
-
-        let selectedNationTmp = null;
+        // AD RECOVERY STATE MACHINE VARIABLES
+        let adSavesRemaining = 3;
+        let countdownTimerInterval = null;
+        let countdownSecondsLeft = 5;
 
         const grid = document.getElementById('nationGrid');
         const startBtn = document.getElementById('startBtn');
@@ -502,18 +460,15 @@
         function selectGameMode(mode) {
             activeGameMode = mode;
             SoundFX.startMusic();
-            
             document.getElementById('splashScreen').style.display = "none";
             document.getElementById('selectorScreen').style.display = "flex";
-
-            setupPhase = 1;
-            selectedNationTmp = null;
+            setupPhase = 1; selectedNationTmp = null;
             startBtn.disabled = true;
-            startBtn.style.opacity = "0.4";
 
             if (activeGameMode === "1P") {
                 selectionTitle.innerText = "CHOOSE YOUR TEAM";
                 selectionTitle.style.color = "#f7b500";
+                adSavesRemaining = 3; // Reset container lives
             } else {
                 selectionTitle.innerText = "PLAYER 1 CHOOSE";
                 selectionTitle.style.color = "#f7b500";
@@ -525,7 +480,6 @@
             grid.innerHTML = "";
             nations.forEach(nation => {
                 if (activeGameMode === "2P" && setupPhase === 2 && player1Nation && player1Nation.tag === nation.tag) return;
-
                 const btn = document.createElement('div');
                 btn.className = 'nation-btn';
                 btn.innerHTML = `<span class="flag-tag">${nation.tag}</span><span>${nation.name}</span>`;
@@ -534,7 +488,6 @@
                     btn.classList.add('selected');
                     selectedNationTmp = nation;
                     startBtn.disabled = false;
-                    startBtn.style.opacity = "1";
                 });
                 grid.appendChild(btn);
             });
@@ -547,12 +500,8 @@
             } else {
                 if (setupPhase === 1) {
                     player1Nation = selectedNationTmp;
-                    setupPhase = 2;
-                    selectedNationTmp = null;
-                    startBtn.disabled = true;
-                    startBtn.style.opacity = "0.4";
-                    selectionTitle.innerText = "PLAYER 2 CHOOSE";
-                    selectionTitle.style.color = "#5ac8fa";
+                    setupPhase = 2; selectedNationTmp = null; startBtn.disabled = true;
+                    selectionTitle.innerText = "PLAYER 2 CHOOSE"; selectionTitle.style.color = "#5ac8fa";
                     buildSelectionGrid();
                 } else if (setupPhase === 2) {
                     player2Nation = selectedNationTmp;
@@ -560,6 +509,38 @@
                 }
             }
         });
+
+        // --- LOCKER ROOM LOGIC ---
+        function openLockerRoom() {
+            document.getElementById('splashScreen').style.display = "none";
+            const bGrid = document.getElementById('ballGrid');
+            bGrid.innerHTML = "";
+
+            ballStyles.forEach(ball => {
+                const isLocked = highStreak < ball.req;
+                const card = document.createElement('div');
+                card.className = `ball-card ${isLocked ? 'locked' : ''} ${activeBallStyle === ball.name ? 'selected' : ''}`;
+                
+                if (isLocked) {
+                    card.innerHTML = `<span class="lock-tag">🔒 Streak ${ball.req}</span><span>${ball.name}</span>`;
+                } else {
+                    card.innerHTML = `<span class="lock-tag" style="background:#4CD964; color:#000;">✓ Ready</span><span>${ball.name}</span>`;
+                    card.addEventListener('click', () => {
+                        document.querySelectorAll('.ball-card').forEach(c => c.classList.remove('selected'));
+                        card.classList.add('selected');
+                        activeBallStyle = ball.name;
+                        localStorage.setItem('wc_active_ball', ball.name);
+                    });
+                }
+                bGrid.appendChild(card);
+            });
+            document.getElementById('lockerScreen').style.display = "flex";
+        }
+
+        function closeLockerRoom() {
+            document.getElementById('lockerScreen').style.display = "none";
+            document.getElementById('splashScreen').style.display = "flex";
+        }
 
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
@@ -572,70 +553,44 @@
         resizeCanvas();
 
         let ball, keeper, goal, gameState;
-        let swipePoints = [];
-        let isTrackingSwipe = false;
+        let swipePoints = []; let isTrackingSwipe = false;
         
         function initEntities() {
-            goal = {
-                x: canvas.width * 0.15,
-                y: 140,
-                w: canvas.width * 0.7,
-                h: 130
-            };
+            goal = { x: canvas.width * 0.15, y: 140, w: canvas.width * 0.7, h: 130 };
 
             ball = {
-                startX: canvas.width / 2,
-                startY: canvas.height - 120,
-                x: canvas.width / 2,
-                y: canvas.height - 120,
-                targetX: 0,
-                targetY: 0,
-                radius: 22,       
-                startRadius: 22,
-                targetRadius: 8,  
-                progress: 0,      
-                speed: 0.035,
-                bounceVx: 0,
-                bounceVy: 0,
-                spin: 0,          
-                curveOffsetX: 0   
+                startX: canvas.width / 2, startY: canvas.height - 120,
+                x: canvas.width / 2, y: canvas.height - 120,
+                targetX: 0, targetY: 0, radius: 22, startRadius: 22, targetRadius: 8,  
+                progress: 0, speed: 0.035, bounceVx: 0, bounceVy: 0, spin: 0, curveOffsetX: 0   
             };
 
             let initialSpeed = 2.0;
-            let isFifthShotOrSuddenDeath = false;
+            let currentActiveBallConfig = ballStyles.find(b => b.name === activeBallStyle) || ballStyles[0];
+            ball.config = currentActiveBallConfig;
 
             if (activeGameMode === "1P") {
-                let progressFactor = Math.min(streak, 100) / 100;
-                initialSpeed = 1.0 + (progressFactor * 3.2); 
-            } else {
-                initialSpeed = 1.0 + Math.min((currentRound - 1) * 0.3, 2.2);
-                let totalShotsTaken = (currentKicker === 1) ? p1History.length : p2History.length;
-                if (totalShotsTaken === 4 || isSuddenDeath) {
-                    isFifthShotOrSuddenDeath = true;
+                // GOALKEEPER DIFFICULTY OVERHAUL
+                if (streak < 10) {
+                    // Signficantly lower capabilities to start out safely
+                    initialSpeed = 1.0 + (streak * 0.06); 
+                } else {
+                    // Start scaling upward progressively from streak 10 onwards
+                    let advancedStreakLevel = streak - 10;
+                    initialSpeed = 1.6 + (advancedStreakLevel * 0.15); 
                 }
+                initialSpeed = Math.min(initialSpeed, 5.2); // Cap processing maximum cap
+            } else {
+                initialSpeed = 2.0 + Math.min((currentRound - 1) * 0.3, 2.2);
             }
 
             keeper = {
-                x: canvas.width / 2,
-                baselineY: 240, 
-                y: 240,
-                w: 54, 
-                h: 70,
-                dir: Math.random() < 0.5 ? 1 : -1,
-                speed: initialSpeed,
-                baseSpeed2P: initialSpeed, 
-                state: 'idling', 
-                targetX: canvas.width / 2,
-                targetY: 240,
-                isPsychOutActive: isFifthShotOrSuddenDeath,
-                psychOutTimer: 0,
-                psychOutInterval: 90, 
-                isFrozen: false
+                x: canvas.width / 2, baselineY: 240, y: 240, w: 54, h: 70,
+                dir: Math.random() < 0.5 ? 1 : -1, speed: initialSpeed,
+                state: 'idling', targetX: canvas.width / 2, targetY: 240
             };
 
-            gameState = 'aiming';
-            swipePoints = [];
-            isTrackingSwipe = false;
+            gameState = 'aiming'; swipePoints = []; isTrackingSwipe = false;
 
             if (activeGameMode === "2P") {
                 let activeNation = (currentKicker === 1) ? player1Nation : player2Nation;
@@ -655,37 +610,26 @@
         function handleStart(x, y) {
             if (gameState !== 'aiming') return;
             let rect = canvas.getBoundingClientRect();
-            let touchX = x - rect.left;
-            let touchY = y - rect.top;
             isTrackingSwipe = true;
-            swipePoints = [{ x: touchX, y: touchY, time: Date.now() }];
+            swipePoints = [{ x: x - rect.left, y: y - rect.top, time: Date.now() }];
         }
 
         function handleMove(x, y) {
             if (!isTrackingSwipe || gameState !== 'aiming') return;
             let rect = canvas.getBoundingClientRect();
-            let touchX = x - rect.left;
-            let touchY = y - rect.top;
-            swipePoints.push({ x: touchX, y: touchY, time: Date.now() });
+            swipePoints.push({ x: x - rect.left, y: y - rect.top, time: Date.now() });
             if (swipePoints.length > 40) swipePoints.shift();
         }
 
         function handleEnd() {
-            if (!isTrackingSwipe || swipePoints.length < 3) {
-                isTrackingSwipe = false;
-                return;
-            }
+            if (!isTrackingSwipe || swipePoints.length < 3) { isTrackingSwipe = false; return; }
             isTrackingSwipe = false;
 
-            let first = swipePoints[0];
-            let last = swipePoints[swipePoints.length - 1];
-            let duration = last.time - first.time;
-            let diffY = last.y - first.y;
-            let diffX = last.x - first.x;
+            let first = swipePoints[0]; let last = swipePoints[swipePoints.length - 1];
+            let duration = last.time - first.time; let diffY = last.y - first.y; let diffX = last.x - first.x;
 
             if (diffY < -40 && duration < 400) { 
                 SoundFX.playKick();
-
                 ball.targetX = ball.startX + (diffX * 1.3);
 
                 let rawForceY = Math.abs(diffY) / duration; 
@@ -705,29 +649,24 @@
                 let maxDeviation = 0;
                 for (let i = 1; i < swipePoints.length - 1; i++) {
                     let p = swipePoints[i];
-                    let numerator = (last.y - first.y) * p.x - (last.x - first.x) * p.y + last.x * first.y - last.y * first.x;
-                    let denominator = Math.sqrt(Math.pow(last.y - first.y, 2) + Math.pow(last.x - first.x, 2));
-                    let distance = denominator !== 0 ? (numerator / denominator) : 0;
+                    let num = (last.y - first.y) * p.x - (last.x - first.x) * p.y + last.x * first.y - last.y * first.x;
+                    let den = Math.sqrt(Math.pow(last.y - first.y, 2) + Math.pow(last.x - first.x, 2));
+                    let distance = den !== 0 ? (num / den) : 0;
                     if (Math.abs(distance) > Math.abs(maxDeviation)) maxDeviation = distance;
                 }
 
-                ball.spin = maxDeviation * -1.8; 
-                ball.targetX += (ball.spin * 0.4);
-                
-                if (ball.targetY >= goal.y) {
-                    ball.targetX = Math.max(goal.x - 35, Math.min(goal.x + goal.w + 35, ball.targetX));
-                }
+                ball.spin = maxDeviation * -1.8; ball.targetX += (ball.spin * 0.4);
+                if (ball.targetY >= goal.y) ball.targetX = Math.max(goal.x - 35, Math.min(goal.x + goal.w + 35, ball.targetX));
 
-                ball.progress = 0;
-                gameState = 'shooting';
-                keeper.state = 'diving';
-                
-                keeper.isFrozen = false;
-                if (activeGameMode === "2P") {
-                    keeper.speed = keeper.baseSpeed2P;
-                }
+                ball.progress = 0; gameState = 'shooting'; keeper.state = 'diving';
 
-                let errorMargin = (Math.random() * 80 - 40); 
+                // EASY-START SAVING ENGINE MODIFIER
+                let errorMarginValue = 80; 
+                if (activeGameMode === "1P" && streak < 10) {
+                    // Increase mistake zone coordinates significantly for the keeper early on
+                    errorMarginValue = 160 - (streak * 8); 
+                }
+                let errorMargin = (Math.random() * (errorMarginValue * 2) - errorMarginValue); 
                 keeper.targetX = Math.max(goal.x + 10, Math.min(goal.x + goal.w - 10, ball.targetX + errorMargin));
 
                 if (ball.targetY < keeper.baselineY - 40) {
@@ -748,25 +687,7 @@
 
         function update() {
             if (gameState === 'aiming') {
-                if (activeGameMode === "2P" && keeper.isPsychOutActive) {
-                    keeper.psychOutTimer++;
-                    if (keeper.psychOutTimer >= keeper.psychOutInterval) {
-                        keeper.psychOutTimer = 0;
-                        let rngDecision = Math.random();
-                        if (rngDecision < 0.25) {
-                            keeper.isFrozen = true;
-                        } else {
-                            keeper.isFrozen = false;
-                            keeper.speed = keeper.baseSpeed2P * (0.4 + Math.random() * 1.2);
-                            if (Math.random() < 0.5) keeper.dir *= -1;
-                        }
-                    }
-                }
-
-                if (!keeper.isFrozen) {
-                    keeper.x += keeper.speed * keeper.dir;
-                }
-
+                keeper.x += keeper.speed * keeper.dir;
                 if (keeper.x - keeper.w/2 < goal.x || keeper.x + keeper.w/2 > goal.x + goal.w) {
                     keeper.dir *= -1;
                     keeper.x = keeper.x - keeper.w/2 < goal.x ? goal.x + keeper.w/2 : goal.x + goal.w - keeper.w/2;
@@ -780,7 +701,6 @@
 
                 let curveFactor = Math.sin(ball.progress * Math.PI); 
                 ball.curveOffsetX = ball.spin * curveFactor;
-
                 ball.x = (ball.startX + (ball.targetX - ball.startX) * ball.progress) + ball.curveOffsetX;
                 ball.y = ball.startY + (ball.targetY - ball.startY) * ball.progress;
                 ball.radius = ball.startRadius + (ball.targetRadius - ball.startRadius) * ball.progress;
@@ -792,21 +712,10 @@
 
                 if (ball.progress >= 1) {
                     let hitKeeperWidth = keeper.w / 2 + 5; 
-                    
                     if (ball.x >= keeper.x - hitKeeperWidth && ball.x <= keeper.x + hitKeeperWidth && ball.y >= keeper.y - 45 && ball.y <= keeper.y + 45) {
-                        SoundFX.playSave();
-                        gameState = 'rebounding';
-                        let hitOffset = (ball.x - keeper.x) / hitKeeperWidth; 
-                        ball.bounceVx = hitOffset * 4 - (ball.spin * 0.02);   
-                        ball.bounceVy = 5.5;             
-                        return;
+                        gameState = 'rebounding'; ball.bounceVx = ((ball.x - keeper.x) / hitKeeperWidth) * 4; ball.bounceVy = 5.5; return;
                     }
-
-                    if (ball.x >= goal.x && ball.x <= goal.x + goal.w && ball.y >= goal.y && ball.y <= goal.y + goal.h) {
-                        processResult(true); 
-                    } else {
-                        processResult(false); 
-                    }
+                    processResult(ball.x >= goal.x && ball.x <= goal.x + goal.w && ball.y >= goal.y && ball.y <= goal.y + goal.h);
                     return;
                 }
             }
@@ -814,7 +723,6 @@
             if (gameState === 'rebounding') {
                 ball.x += ball.bounceVx; ball.y += ball.bounceVy;
                 if (ball.radius < ball.startRadius * 0.8) ball.radius += 0.4;
-                ball.bounceVx *= 0.98; ball.bounceVy *= 0.95;
                 if (ball.bounceVy < 0.8) processResult(false);
             }
         }
@@ -827,248 +735,252 @@
             ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
             for (let i = 0; i < 6; i++) {
                 if (i % 2 === 0) {
-                    ctx.beginPath();
-                    let topY = goal.y + goal.h + (i * 40); let botY = goal.y + goal.h + ((i + 1) * 70);
-                    ctx.moveTo(0, topY); ctx.lineTo(canvas.width, topY); ctx.lineTo(canvas.width, botY); ctx.lineTo(0, botY);
-                    ctx.fill();
+                    ctx.beginPath(); ctx.moveTo(0, goal.y + goal.h + (i * 40)); ctx.lineTo(canvas.width, goal.y + goal.h + (i * 40));
+                    ctx.lineTo(canvas.width, goal.y + goal.h + ((i + 1) * 70)); ctx.lineTo(0, goal.y + goal.h + ((i + 1) * 70)); ctx.fill();
                 }
             }
 
             ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(goal.x - 40, goal.y + goal.h); ctx.lineTo(0, canvas.height - 50);
+            ctx.beginPath(); ctx.moveTo(goal.x - 40, goal.y + goal.h); ctx.lineTo(0, canvas.height - 50);
             ctx.moveTo(goal.x + goal.w + 40, goal.y + goal.h); ctx.lineTo(canvas.width, canvas.height - 50);
-            ctx.moveTo(0, canvas.height - 50); ctx.lineTo(canvas.width, canvas.height - 50);
-            ctx.stroke();
-            
+            ctx.moveTo(0, canvas.height - 50); ctx.lineTo(canvas.width, canvas.height - 50); ctx.stroke();
             ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(canvas.width/2, canvas.height - 120, 6, 0, Math.PI * 2); ctx.fill();
 
-            let netShadow = ctx.createLinearGradient(0, goal.y, 0, goal.y + goal.h);
-            netShadow.addColorStop(0, 'rgba(0,0,0,0.6)'); netShadow.addColorStop(1, 'rgba(0,0,0,0.1)');
-            ctx.fillStyle = netShadow; ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
-
+            ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
             ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1;
-            for (let x = goal.x; x <= goal.x + goal.w; x += 10) { 
-                ctx.beginPath(); ctx.moveTo(x, goal.y); ctx.lineTo(x, goal.y + goal.h); ctx.stroke(); 
-            }
-            for (let y = goal.y; y <= goal.y + goal.h; y += 10) { 
-                ctx.beginPath(); ctx.moveTo(goal.x, y); ctx.lineTo(goal.x + goal.w, y); ctx.stroke(); 
-            }
+            for (let x = goal.x; x <= goal.x + goal.w; x += 10) { ctx.beginPath(); ctx.moveTo(x, goal.y); ctx.lineTo(x, goal.y + goal.h); ctx.stroke(); }
+            for (let y = goal.y; y <= goal.y + goal.h; y += 10) { ctx.beginPath(); ctx.moveTo(goal.x, y); ctx.lineTo(goal.x + goal.w, y); ctx.stroke(); }
 
-            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-            ctx.beginPath(); ctx.moveTo(goal.x, goal.y + goal.h); ctx.lineTo(goal.x, goal.y); ctx.lineTo(goal.x + goal.w, goal.y); ctx.lineTo(goal.x + goal.w, goal.y + goal.h); ctx.stroke();
+            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.beginPath();
+            ctx.moveTo(goal.x, goal.y + goal.h); ctx.lineTo(goal.x, goal.y); ctx.lineTo(goal.x + goal.w, goal.y); ctx.lineTo(goal.x + goal.w, goal.y + goal.h); ctx.stroke();
 
             ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath();
             let shadowY = (gameState === 'rebounding') ? ball.y + 25 : ball.startY + ((goal.y + goal.h + 10) - ball.startY) * ball.progress;
-            let shadowScale = (gameState === 'rebounding') ? Math.max(0.3, (1 - (ball.bounceVy / 10))) : 1 - (ball.progress * 0.4);
-            ctx.ellipse(ball.x, shadowY, ball.radius * 1.1 * shadowScale, ball.radius * 0.4 * shadowScale, 0, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.ellipse(ball.x, shadowY, ball.radius * 1.1, ball.radius * 0.4, 0, 0, Math.PI * 2); ctx.fill();
 
+            // KEEPER
             let currentDefendingColor = '#ff5722';
-            if (activeGameMode === "1P" && player1Nation) {
-                currentDefendingColor = '#ff5722'; 
-            } else if (activeGameMode === "2P") {
-                let currentDefendingNation = (currentKicker === 1) ? player2Nation : player1Nation;
-                if (currentDefendingNation) currentDefendingColor = currentDefendingNation.color;
+            if (activeGameMode === "2P") {
+                let defNation = (currentKicker === 1) ? player2Nation : player1Nation;
+                if (defNation) currentDefendingColor = defNation.color;
             }
-            
             ctx.save(); ctx.translate(keeper.x, keeper.y);
             ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(0, 30 + (keeper.baselineY - keeper.y), keeper.w * 0.6, 8, 0, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = '#222'; ctx.fillRect(-18, 22, 10, 8); ctx.fillRect(8, 22, 10, 8);
-            ctx.fillStyle = '#fff'; ctx.fillRect(-16, 10, 7, 12); ctx.fillRect(9, 10, 7, 12);
-            ctx.fillStyle = '#111111'; ctx.fillRect(-18, -2, 36, 14);
-            ctx.fillStyle = currentDefendingColor; ctx.fillRect(-20, -37, 40, 35);
-
-            if (gameState === 'shooting' || keeper.state === 'diving') {
-                ctx.fillRect(-32, -32, 12, 10); ctx.fillRect(20, -32, 12, 10);  
-            } else {
-                ctx.fillRect(-28, -27, 9, 22); ctx.fillRect(19, -27, 9, 22);
-            }
+            ctx.fillStyle = '#111111'; ctx.fillRect(-18, -2, 36, 14); ctx.fillStyle = currentDefendingColor; ctx.fillRect(-20, -37, 40, 35);
             ctx.fillStyle = '#ffdbac'; ctx.beginPath(); ctx.arc(0, -48, 11, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#333'; ctx.fillRect(-8, -59, 16, 5);
             ctx.restore();
 
+            // DYNAMIC LOCKER ROOM BALL RENDERING
             ctx.save(); ctx.translate(ball.x, ball.y);
-            ctx.rotate((ball.progress * 4.5) + ((ball.spin * 0.05) * ball.progress));
-            ctx.fillStyle = '#ffffff'; ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = Math.max(1.5, ball.radius * 0.08);
+            ctx.rotate(ball.progress * 5);
+            
+            let c = ball.config;
+            ctx.fillStyle = c.primary; ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = Math.max(1.5, ball.radius * 0.08);
             ctx.beginPath(); ctx.arc(0, 0, Math.max(ball.radius, 3), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
             
-            ctx.fillStyle = '#1a1a1a';
-            let r = ball.radius;
-            if (r > 4) {
-                ctx.beginPath(); ctx.arc(0, 0, r * 0.32, 0, Math.PI * 2); ctx.fill();
-                ctx.strokeStyle = 'rgba(0,0,0,0.4)'; ctx.lineWidth = Math.max(1, r * 0.05);
-                for (let a = 0; a < Math.PI * 2; a += (Math.PI * 2 / 5)) {
-                    ctx.beginPath(); ctx.moveTo(Math.cos(a) * (r * 0.32), Math.sin(a) * (r * 0.32)); ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); ctx.stroke();
+            ctx.fillStyle = c.secondary;
+            if (ball.radius > 4) {
+                if (c.style === 'classic') {
+                    ctx.beginPath(); ctx.arc(0, 0, ball.radius * 0.32, 0, Math.PI * 2); ctx.fill();
+                    for (let a = 0; a < Math.PI * 2; a += (Math.PI * 2 / 5)) {
+                        ctx.beginPath(); ctx.moveTo(Math.cos(a) * (ball.radius * 0.32), Math.sin(a) * (ball.radius * 0.32));
+                        ctx.lineTo(Math.cos(a) * ball.radius, Math.sin(a) * ball.radius); ctx.stroke();
+                    }
+                } else if (c.style === 'neon' || c.style === 'gradient') {
+                    ctx.strokeStyle = c.secondary; ctx.lineWidth = ball.radius * 0.15;
+                    ctx.beginPath(); ctx.arc(0, 0, ball.radius * 0.5, 0, Math.PI); ctx.stroke();
+                } else if (c.style === 'carbon' || c.style === 'gold') {
+                    ctx.fillStyle = c.secondary; ctx.beginPath();
+                    ctx.rect(-ball.radius*0.4, -ball.radius*0.4, ball.radius*0.8, ball.radius*0.8); ctx.fill();
                 }
             }
             ctx.restore();
 
             if (gameState === 'result') {
                 ctx.fillStyle = feedbackColor; ctx.font = 'bold 44px sans-serif'; ctx.textAlign = 'center';
-                ctx.shadowBlur = 12; ctx.shadowColor = 'rgba(0,0,0,0.8)';
                 ctx.fillText(feedbackText, canvas.width / 2, canvas.height * 0.52);
-                ctx.shadowBlur = 0;
             }
         }
 
-        let feedbackText = "";
-        let feedbackColor = "#fff";
+        let feedbackText = ""; let feedbackColor = "#fff";
 
         function processResult(isGoal) {
             gameState = 'result';
-
             if (isGoal) {
-                SoundFX.playGoal();
-                feedbackText = "GOAL!"; feedbackColor = "#4CD964";
+                SoundFX.playGoal(); feedbackText = "GOAL!"; feedbackColor = "#4CD964";
+                careerGoals++; localStorage.setItem('wc_career_goals', careerGoals);
+                document.getElementById('careerCounter').innerText = careerGoals;
             } else {
-                SoundFX.playSave();
-                feedbackText = "MISS!"; feedbackColor = "#FF3B30";
+                SoundFX.playSave(); feedbackText = "MISS!"; feedbackColor = "#FF3B30";
             }
 
             if (activeGameMode === "1P") {
                 if (isGoal) {
                     score++; streak++;
+                    if (streak > highStreak) {
+                        highStreak = streak; localStorage.setItem('wc_high_streak', highStreak);
+                    }
                     document.getElementById('uiScore').innerText = score;
                     document.getElementById('uiStreak').innerText = streak;
                     setTimeout(() => { initEntities(); }, 1400);
                 } else {
-                    SoundFX.stopMusic(); SoundFX.playGameOver();
-                    feedbackText = "MATCH OVER"; feedbackColor = "#FF3B30";
+                    // INTERCEPT FAIL LOGIC FOR STREAK RECOVERY TIME
                     setTimeout(() => {
-                        gameState = 'over';
-                        document.getElementById('winStatusText').innerText = "OUT OF THE CUP!";
-                        document.getElementById('winStatusText').style.color = "#FF3B30";
-                        document.getElementById('finalScoreText').innerText = `You scored ${score} penalties for ${player1Nation.name}.`;
-                        document.getElementById('gameOverScreen').style.display = 'flex';
-                    }, 1400);
+                        if (adSavesRemaining > 0) {
+                            launchContinueVerificationScreen();
+                        } else {
+                            triggerImmediateGameOver();
+                        }
+                    }, 1000);
                 }
             } else {
-                let resultString = isGoal ? 'goal' : 'miss';
-                if (currentKicker === 1) p1History.push(resultString);
-                else p2History.push(resultString);
-
+                let res = isGoal ? 'goal' : 'miss';
+                if (currentKicker === 1) p1History.push(res); else p2History.push(res);
                 syncScoreboardDots();
                 setTimeout(() => { evaluateMatchState2P(); }, 1400);
             }
         }
 
+        // --- WATCH AD TO CONTINUE ENGINE STAGE ---
+        function launchContinueVerificationScreen() {
+            gameState = 'prompt';
+            document.getElementById('continueStreakVal').innerText = streak;
+            document.getElementById('continuesLeftTxt').innerText = `Saves remaining: ${adSavesRemaining} / 3`;
+            document.getElementById('continueScreen').style.display = 'flex';
+            
+            countdownSecondsLeft = 5;
+            document.getElementById('timerBox').innerText = countdownSecondsLeft;
+            
+            clearInterval(countdownTimerInterval);
+            countdownTimerInterval = setInterval(() => {
+                countdownSecondsLeft--;
+                if (countdownSecondsLeft <= 0) {
+                    clearInterval(countdownTimerInterval);
+                    skipRecovery();
+                } else {
+                    document.getElementById('timerBox').innerText = countdownSecondsLeft;
+                }
+            }, 1000);
+        }
+
+        function triggerAdRecovery() {
+            clearInterval(countdownTimerInterval);
+            document.getElementById('continueScreen').style.display = 'none';
+            
+            // Bring up full screen interstitial simulation container
+            const overlay = document.getElementById('adOverlay');
+            const statusTxt = document.getElementById('adStatusTxt');
+            overlay.style.display = 'flex';
+            
+            adSavesRemaining--;
+
+            // Simulate the delay loop window required for rendering live commercial hooks
+            setTimeout(() => { statusTxt.innerText = "Ad complete! Resuming in 2..."; }, 1500);
+            setTimeout(() => { statusTxt.innerText = "Ad complete! Resuming in 1..."; }, 2500);
+            
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                statusTxt.innerText = "Loading Ad Campaign...";
+                initEntities(); // Reset playground coordinates securely
+                gameLoop();
+            }, 3500);
+        }
+
+        function skipRecovery() {
+            clearInterval(countdownTimerInterval);
+            document.getElementById('continueScreen').style.display = 'none';
+            triggerImmediateGameOver();
+        }
+
+        function triggerImmediateGameOver() {
+            SoundFX.stopMusic();
+            gameState = 'over';
+            document.getElementById('winStatusText').innerText = "OUT OF THE CUP!";
+            document.getElementById('winStatusText').style.color = "#FF3B30";
+            document.getElementById('finalScoreText').innerText = `You finished with a streak score of ${streak} for ${player1Nation.name}.`;
+            document.getElementById('gameOverScreen').style.display = 'flex';
+        }
+
         function syncScoreboardDots() {
             let p1Goals = p1History.filter(r => r === 'goal').length;
             let p2Goals = p2History.filter(r => r === 'goal').length;
-
             document.getElementById('p1Score').innerText = p1Goals;
             document.getElementById('p2Score').innerText = p2Goals;
 
-            let p1Html = "";
-            let maxDots = Math.max(5, p1History.length);
-            for(let i=0; i<maxDots; i++) {
-                let cl = "dot";
-                if(p1History[i] === 'goal') cl += " goal";
-                if(p1History[i] === 'miss') cl += " miss";
-                p1Html += `<div class="${cl}"></div>`;
-            }
-            document.getElementById('p1Dots').innerHTML = p1Html;
-
-            let p2Html = "";
-            maxDots = Math.max(5, p2History.length);
-            for(let i=0; i<maxDots; i++) {
-                let cl = "dot";
-                if(p2History[i] === 'goal') cl += " goal";
-                if(p2History[i] === 'miss') cl += " miss";
-                p2Html += `<div class="${cl}"></div>`;
-            }
-            document.getElementById('p2Dots').innerHTML = p2Html;
+            let buildDots = (hist) => {
+                let html = ""; let max = Math.max(5, hist.length);
+                for(let i=0; i<max; i++) {
+                    let cl = "dot" + (hist[i] === 'goal' ? ' goal' : hist[i] === 'miss' ? ' miss' : '');
+                    html += `<div class="${cl}"></div>`;
+                }
+                return html;
+            };
+            document.getElementById('p1Dots').innerHTML = buildDots(p1History);
+            document.getElementById('p2Dots').innerHTML = buildDots(p2History);
         }
 
         function evaluateMatchState2P() {
             let p1Goals = p1History.filter(r => r === 'goal').length;
             let p2Goals = p2History.filter(r => r === 'goal').length;
-            let p1ShotsTaken = p1History.length;
-            let p2ShotsTaken = p2History.length;
-
             if (!isSuddenDeath) {
-                let p1Remaining = 5 - p1ShotsTaken;
-                let p2Remaining = 5 - p2ShotsTaken;
-
-                if (p1Goals + p1Remaining < p2Goals) { endGame2P(2); return; }
-                if (p2Goals + p2Remaining < p1Goals) { endGame2P(1); return; }
-
-                if (p1ShotsTaken === 5 && p2ShotsTaken === 5) {
-                    if (p1Goals === p2Goals) {
-                        isSuddenDeath = true; currentRound = 6; currentKicker = 1;
-                        initEntities();
-                    } else {
-                        endGame2P(p1Goals > p2Goals ? 1 : 2);
-                    }
-                } else { advanceTurn2P(); }
+                if (p1Goals + (5 - p1History.length) < p2Goals) { endGame2P(2); return; }
+                if (p2Goals + (5 - p2History.length) < p1Goals) { endGame2P(1); return; }
+                if (p1History.length === 5 && p2History.length === 5) {
+                    if (p1Goals === p2Goals) { isSuddenDeath = true; currentRound = 6; currentKicker = 1; initEntities(); }
+                    else endGame2P(p1Goals > p2Goals ? 1 : 2);
+                } else advanceTurn2P();
             } else {
-                if (p1ShotsTaken === p2ShotsTaken) {
-                    if (p1Goals !== p2Goals) { endGame2P(p1Goals > p2Goals ? 1 : 2); }
+                if (p1History.length === p2History.length) {
+                    if (p1Goals !== p2Goals) endGame2P(p1Goals > p2Goals ? 1 : 2);
                     else { currentRound++; currentKicker = 1; initEntities(); }
-                } else { advanceTurn2P(); }
+                } else advanceTurn2P();
             }
         }
 
         function advanceTurn2P() {
-            if (currentKicker === 1) currentKicker = 2;
-            else { currentKicker = 1; if (!isSuddenDeath) currentRound++; }
+            currentKicker = (currentKicker === 1) ? 2 : 1;
+            if (currentKicker === 1 && !isSuddenDeath) currentRound++;
             initEntities();
         }
 
         function startGame() {
             document.getElementById('selectorScreen').style.display = 'none';
-            
             if (activeGameMode === "1P") {
                 document.getElementById('turnIndicator').style.display = "none";
-                document.getElementById('p1Board').style.display = "none";
-                document.getElementById('p2Board').style.display = "none";
+                document.getElementById('p1Board').style.display = "none"; document.getElementById('p2Board').style.display = "none";
                 document.getElementById('arcadeHUD').style.display = "flex";
-
-                document.getElementById('uiTeam').innerText = player1Nation.tag + " " + player1Nation.name;
+                document.getElementById('uiTeam').innerText = player1Nation.tag;
                 score = 0; streak = 0;
-                document.getElementById('uiScore').innerText = score;
-                document.getElementById('uiStreak').innerText = streak;
+                document.getElementById('uiScore').innerText = score; document.getElementById('uiStreak').innerText = streak;
             } else {
                 document.getElementById('arcadeHUD').style.display = "none";
                 document.getElementById('turnIndicator').style.display = "block";
-                document.getElementById('p1Board').style.display = "block";
-                document.getElementById('p2Board').style.display = "block";
-
-                document.getElementById('p1Name').innerText = `P1: ${player1Nation.name}`;
-                document.getElementById('p2Name').innerText = `P2: ${player2Nation.name}`;
-
-                p1History = []; p2History = [];
-                currentKicker = 1; currentRound = 1; isSuddenDeath = false;
+                document.getElementById('p1Board').style.display = "block"; document.getElementById('p2Board').style.display = "block";
+                document.getElementById('p1Name').innerText = `P1: ${player1Nation.tag}`; document.getElementById('p2Name').innerText = `P2: ${player2Nation.tag}`;
+                p1History = []; p2History = []; currentKicker = 1; currentRound = 1; isSuddenDeath = false;
                 syncScoreboardDots();
             }
-
             initEntities();
             gameLoop();
         }
 
         function endGame2P(winner) {
-            gameState = 'over';
-            SoundFX.stopMusic(); SoundFX.playGameOver();
-
-            let p1Final = p1History.filter(r => r === 'goal').length;
-            let p2Final = p2History.filter(r => r === 'goal').length;
+            gameState = 'over'; SoundFX.stopMusic();
             let winnerName = (winner === 1) ? player1Nation.name : player2Nation.name;
-
             document.getElementById('winStatusText').innerText = `${winnerName.toUpperCase()} WINS!`;
             document.getElementById('winStatusText').style.color = (winner === 1) ? "#f7b500" : "#5ac8fa";
-            document.getElementById('finalScoreText').innerText = `Final Scoreline: ${p1Final} - ${p2Final} ${isSuddenDeath ? '(AET)' : ''}`;
+            document.getElementById('finalScoreText').innerText = `Scoreline: ${p1History.filter(r=>r==='goal').length} - ${p2History.filter(r=>r==='goal').length}`;
             document.getElementById('gameOverScreen').style.display = 'flex';
         }
 
         function gameLoop() {
             update(); draw();
-            if (gameState !== 'over') requestAnimationFrame(gameLoop);
+            if (gameState !== 'over' && gameState !== 'prompt') requestAnimationFrame(gameLoop);
         }
 
         function resetToMainMenu() {
             document.getElementById('gameOverScreen').style.display = 'none';
-            document.getElementById('selectorScreen').style.display = 'none';
             document.getElementById('splashScreen').style.display = 'flex';
         }
     </script>
