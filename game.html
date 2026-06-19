@@ -720,10 +720,22 @@
                 }
             }
 
-            if (gameState === 'rebounding') {
-                ball.x += ball.bounceVx; ball.y += ball.bounceVy;
-                if (ball.radius < ball.startRadius * 0.8) ball.radius += 0.4;
-                if (ball.bounceVy < 0.8) processResult(false);
+           if (gameState === 'rebounding') {
+    ball.x += ball.bounceVx; 
+    ball.y += ball.bounceVy;
+    
+    // Simulate gravity pulling the bounced ball down
+    ball.bounceVy -= 0.15; 
+
+    if (ball.radius < ball.startRadius * 0.8) {
+        ball.radius += 0.4;
+    }
+    
+    // When the ball stops moving or falls out of view, process the miss
+    if (ball.bounceVy <= 0 || ball.y > canvas.height) {
+        processResult(false);
+    }
+}
             }
         }
 
