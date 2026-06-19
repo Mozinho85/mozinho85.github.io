@@ -10,6 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+    <!-- GOOGLE ADSENSE CLIENT SCRIPT -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9853366444571043" crossorigin="anonymous"></script>
 
     <style>
@@ -236,7 +237,6 @@
 
         #canvasContainer { width: 100%; height: 100%; position: absolute; top: 0; left: 0; z-index: 1; }
         canvas { width: 100%; height: 100%; display: block; }
-        
         #instructions {
             position: absolute; bottom: 35px; width: 100%; text-align: center;
             font-size: 14px; font-weight: 500; color: rgba(255,255,255,0.85);
@@ -266,22 +266,22 @@
             border-top: 2px solid rgba(255, 255, 255, 0.1); z-index: 20;
         }
 
-        /* EXTRA LIFE CELEBRATION BANNER */
+        /* EXTRA LIFE POP-UP BANNER ANIMATION */
         #extraLifeBanner {
             position: absolute;
             top: 45%;
             left: 50%;
-            transform: translate(-50%, -50%) scale(0.5);
+            transform: translate(-50%, -50%) scale(0.4);
             background: linear-gradient(135deg, #f7b500 0%, #b88600 100%);
             color: #072513;
             font-weight: 900;
-            font-size: 26px;
-            padding: 15px 30px;
+            font-size: 24px;
+            padding: 16px 32px;
             border-radius: 50px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.6), inset 0 0 10px rgba(255,255,255,0.5);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.65), inset 0 0 8px rgba(255,255,255,0.6);
             border: 3px solid #fff;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
             white-space: nowrap;
             z-index: 99;
             opacity: 0;
@@ -289,7 +289,7 @@
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        #extraLifeBanner.animate {
+        #extraLifeBanner.show {
             opacity: 1;
             transform: translate(-50%, -50%) scale(1.1);
         }
@@ -303,8 +303,10 @@
             <div id="audioDebug">Audio Status: Initializing...</div>
             <audio id="bgMusic" src="bgm.mp3" loop preload="auto"></audio>
 
-            <div id="extraLifeBanner">+1 EXTRA LIFE!</div>
+            <!-- EXTRA LIFE CELEBRATION HUD ELEMENT -->
+            <div id="extraLifeBanner">⭐ EXTRA LIFE! ⭐</div>
 
+            <!-- SPLASH / MAIN MENU -->
             <div id="splashScreen" class="screen">
                 <h1 style="font-size: 36px; margin-bottom: 20px; color: #f7b500;">PENALTY CUP<br><span style="color:#fff; font-size:20px;">WORLD CUP 2026</span></h1>
                 <div style="font-size: 12px; color: #aaa; margin-bottom: 15px;">Career Goals Scoreline: <span id="careerCounter" style="color:#4CD964; font-weight:bold;">0</span></div>
@@ -313,6 +315,7 @@
                 <button class="menu-btn" onclick="openLockerRoom()" style="border-color: #f7b500; font-size:15px; width:60%;">⚽ Locker Room</button>
             </div>
 
+            <!-- NATION SELECTOR -->
             <div id="selectorScreen" class="screen" style="display: none;">
                 <h1 id="selectionTitle">CHOOSE YOUR TEAM</h1>
                 <p>Select your nation to take the pitch</p>
@@ -320,6 +323,7 @@
                 <button class="action-btn" id="startBtn" disabled>CONFIRM</button>
             </div>
 
+            <!-- LOCKER ROOM (BALL UNLOCKS) -->
             <div id="lockerScreen" class="screen" style="display: none;">
                 <h1>LOCKER ROOM</h1>
                 <p>Unlock custom designs by hitting streaks!</p>
@@ -327,6 +331,7 @@
                 <button class="action-btn" onclick="closeLockerRoom()">BACK TO MENU</button>
             </div>
 
+            <!-- AD STREAK CONTINUATION POPUP -->
             <div id="continueScreen" class="screen" style="display: none; background: rgba(7, 37, 19, 0.95); z-index: 100;">
                 <h1 style="color: #FF3B30;">STREAK AT RISK!</h1>
                 <p style="margin-bottom: 5px;">You missed the shot!</p>
@@ -337,6 +342,7 @@
                 <button class="menu-btn" style="background:transparent; border:none; color:#aaa; font-size:14px; text-decoration:underline;" onclick="skipRecovery()">No thanks, end match</button>
             </div>
 
+            <!-- FAKE INTERSTITIAL AD BREAK OVERLAY -->
             <div id="adOverlay">
                 <div style="color: #aaa; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px;">Sponsored Advertisement</div>
                 <div style="font-size: 24px; color: #fff; margin-bottom: 30px;" id="adStatusTxt">Loading Ad Campaign...</div>
@@ -345,6 +351,7 @@
 
             <div id="turnIndicator">PLAYER 1 SHOOTING</div>
 
+            <!-- SCOREBOARD LAYER -->
             <div id="scoreboardUI">
                 <div id="arcadeHUD" style="display: none;">
                     <div>TEAM: <span id="uiTeam" style="color: #f7b500;">---</span></div>
@@ -364,12 +371,13 @@
                 </div>
             </div>
 
-            <div id="instructions">Flick in a curve to bend your shot!</div>
+            <div id="instructions" style="display:none;">Flick in a curve to bend your shot!</div>
             
             <div id="canvasContainer">
                 <canvas id="gameCanvas"></canvas>
             </div>
 
+            <!-- GAME OVER RESULTS -->
             <div id="gameOverScreen" class="screen" style="display: none;">
                 <h1 id="winStatusText">MATCH OVER</h1>
                 <p id="finalScoreText">Final Scoreline: 3 - 2</p>
@@ -377,6 +385,7 @@
             </div>
         </div>
 
+        <!-- LIVE BOTTOM BANNER UNIT -->
         <div class="ad-container">
             <ins class="adsbygoogle"
                  style="display:inline-block;width:320px;height:50px"
@@ -407,6 +416,23 @@
             { name: 'Shadow Carbon', req: 75, primary: '#2c3e50', secondary: '#000000', style: 'carbon' },
             { name: 'Golden Vault', req: 100, primary: '#f7b500', secondary: '#fff7ad', style: 'gold' }
         ];
+
+        // --- SCREEN ROUTER ENGINE ---
+        function changeScreen(targetId) {
+            const screens = ['splashScreen', 'selectorScreen', 'lockerScreen', 'continueScreen', 'gameOverScreen'];
+            screens.forEach(id => {
+                document.getElementById(id).style.display = (id === targetId) ? 'flex' : 'none';
+            });
+            
+            // Hide HUD elements if going back to menus
+            if (targetId === 'splashScreen' || targetId === 'selectorScreen' || targetId === 'lockerScreen') {
+                document.getElementById('arcadeHUD').style.display = 'none';
+                document.getElementById('p1Board').style.display = 'none';
+                document.getElementById('p2Board').style.display = 'none';
+                document.getElementById('turnIndicator').style.display = 'none';
+                document.getElementById('instructions').style.display = 'none';
+            }
+        }
 
         // --- AUDIO ENGINE ---
         const SoundFX = {
@@ -468,7 +494,7 @@
         let currentKicker = 1; let currentRound = 1; let isSuddenDeath = false;
         let p1History = []; let p2History = []; let selectedNationTmp = null;
 
-        // AD RECOVERY STATE MACHINE VARIABLES
+        // AD RECOVERY CONFIGURATION STATE
         let adSavesRemaining = 3;
         let countdownTimerInterval = null;
         let countdownSecondsLeft = 5;
@@ -480,8 +506,7 @@
         function selectGameMode(mode) {
             activeGameMode = mode;
             SoundFX.startMusic();
-            document.getElementById('splashScreen').style.display = "none";
-            document.getElementById('selectorScreen').style.display = "flex";
+            changeScreen('selectorScreen');
             setupPhase = 1; selectedNationTmp = null;
             startBtn.disabled = true;
 
@@ -532,7 +557,7 @@
 
         // --- LOCKER ROOM LOGIC ---
         function openLockerRoom() {
-            document.getElementById('splashScreen').style.display = "none";
+            changeScreen('lockerScreen');
             const bGrid = document.getElementById('ballGrid');
             bGrid.innerHTML = "";
 
@@ -554,12 +579,10 @@
                 }
                 bGrid.appendChild(card);
             });
-            document.getElementById('lockerScreen').style.display = "flex";
         }
 
         function closeLockerRoom() {
-            document.getElementById('lockerScreen').style.display = "none";
-            document.getElementById('splashScreen').style.display = "flex";
+            changeScreen('splashScreen');
         }
 
         const canvas = document.getElementById('gameCanvas');
@@ -608,6 +631,7 @@
             };
 
             gameState = 'aiming'; swipePoints = []; isTrackingSwipe = false;
+            document.getElementById('instructions').style.display = 'block';
 
             if (activeGameMode === "2P") {
                 let activeNation = (currentKicker === 1) ? player1Nation : player2Nation;
@@ -647,6 +671,7 @@
 
             if (diffY < -40 && duration < 400) { 
                 SoundFX.playKick();
+                document.getElementById('instructions').style.display = 'none';
                 ball.targetX = ball.startX + (diffX * 1.3);
 
                 let rawForceY = Math.abs(diffY) / duration; 
@@ -797,7 +822,7 @@
             ctx.fillStyle = '#ffdbac'; ctx.beginPath(); ctx.arc(0, -48, 11, 0, Math.PI * 2); ctx.fill();
             ctx.restore();
 
-            // BALL STYLE SELECTOR
+            // BALL RE-RENDER ENCLOSURES
             ctx.save(); ctx.translate(ball.x, ball.y);
             ctx.rotate(ball.progress * 5);
             
@@ -850,10 +875,10 @@
                     document.getElementById('uiScore').innerText = score;
                     document.getElementById('uiStreak').innerText = streak;
 
-                    // EXTRA LIFE MILESTONE REWARD CHECK (10, 20, 30...)
+                    // MILESTONE LIFE GENERATION ENGINE (10, 20, 30...)
                     if (streak % 10 === 0 && streak > 0) {
                         adSavesRemaining++;
-                        triggerExtraLifeCelebration();
+                        triggerExtraLifeBannerAnimation();
                     }
 
                     setTimeout(() => { initEntities(); }, 1400);
@@ -874,14 +899,13 @@
             }
         }
 
-        // --- ANIMATE EXTRA LIFE BANNER FUNCTION ---
-        function triggerExtraLifeCelebration() {
-            const banner = document.getElementById('extraLifeBanner');
-            banner.classList.add('animate');
+        // --- FLASH EXTRA LIFE TEXT POPUP CELEBRATION ---
+        function triggerExtraLifeBannerAnimation() {
+            const elBanner = document.getElementById('extraLifeBanner');
+            elBanner.classList.add('show');
             
-            // Clear out after 1.8 seconds
             setTimeout(() => {
-                banner.classList.remove('animate');
+                elBanner.classList.remove('show');
             }, 1800);
         }
 
@@ -890,7 +914,7 @@
             gameState = 'prompt';
             document.getElementById('continueStreakVal').innerText = streak;
             document.getElementById('continuesLeftTxt').innerText = `Saves remaining: ${adSavesRemaining} / 3`;
-            document.getElementById('continueScreen').style.display = 'flex';
+            changeScreen('continueScreen');
             
             countdownSecondsLeft = 5;
             document.getElementById('timerBox').innerText = countdownSecondsLeft;
@@ -930,7 +954,6 @@
 
         function skipRecovery() {
             clearInterval(countdownTimerInterval);
-            document.getElementById('continueScreen').style.display = 'none';
             triggerImmediateGameOver();
         }
 
@@ -939,8 +962,8 @@
             gameState = 'over';
             document.getElementById('winStatusText').innerText = "OUT OF THE CUP!";
             document.getElementById('winStatusText').style.color = "#FF3B30";
-            document.getElementById('finalScoreText').innerText = `You finished with a streak score of ${streak} for ${player1Nation.name}.`;
-            document.getElementById('gameOverScreen').style.display = 'flex';
+            document.getElementById('finalScoreText').innerText = `You finished with a streak score of ${streak} for ${player1Nation ? player1Nation.name : 'your team'}.`;
+            changeScreen('gameOverScreen');
         }
 
         function syncScoreboardDots() {
@@ -986,19 +1009,25 @@
         }
 
         function startGame() {
-            document.getElementById('selectorScreen').style.display = 'none';
+            // Remove selection visibility completely safely using the wrapper engine
+            changeScreen(''); 
+            
             if (activeGameMode === "1P") {
                 document.getElementById('turnIndicator').style.display = "none";
-                document.getElementById('p1Board').style.display = "none"; document.getElementById('p2Board').style.display = "none";
+                document.getElementById('p1Board').style.display = "none"; 
+                document.getElementById('p2Board').style.display = "none";
                 document.getElementById('arcadeHUD').style.display = "flex";
                 document.getElementById('uiTeam').innerText = player1Nation.tag;
                 score = 0; streak = 0;
-                document.getElementById('uiScore').innerText = score; document.getElementById('uiStreak').innerText = streak;
+                document.getElementById('uiScore').innerText = score; 
+                document.getElementById('uiStreak').innerText = streak;
             } else {
                 document.getElementById('arcadeHUD').style.display = "none";
                 document.getElementById('turnIndicator').style.display = "block";
-                document.getElementById('p1Board').style.display = "block"; document.getElementById('p2Board').style.display = "block";
-                document.getElementById('p1Name').innerText = `P1: ${player1Nation.tag}`; document.getElementById('p2Name').innerText = `P2: ${player2Nation.tag}`;
+                document.getElementById('p1Board').style.display = "block"; 
+                document.getElementById('p2Board').style.display = "block";
+                document.getElementById('p1Name').innerText = `P1: ${player1Nation.tag}`; 
+                document.getElementById('p2Name').innerText = `P2: ${player2Nation.tag}`;
                 p1History = []; p2History = []; currentKicker = 1; currentRound = 1; isSuddenDeath = false;
                 syncScoreboardDots();
             }
@@ -1007,12 +1036,13 @@
         }
 
         function endGame2P(winner) {
-            gameState = 'over'; SoundFX.stopMusic();
+            SoundFX.stopMusic();
+            gameState = 'over'; 
             let winnerName = (winner === 1) ? player1Nation.name : player2Nation.name;
             document.getElementById('winStatusText').innerText = `${winnerName.toUpperCase()} WINS!`;
             document.getElementById('winStatusText').style.color = (winner === 1) ? "#f7b500" : "#5ac8fa";
             document.getElementById('finalScoreText').innerText = `Scoreline: ${p1History.filter(r=>r==='goal').length} - ${p2History.filter(r=>r==='goal').length}`;
-            document.getElementById('gameOverScreen').style.display = 'flex';
+            changeScreen('gameOverScreen');
         }
 
         function gameLoop() {
@@ -1021,8 +1051,7 @@
         }
 
         function resetToMainMenu() {
-            document.getElementById('gameOverScreen').style.display = 'none';
-            document.getElementById('splashScreen').style.display = 'flex';
+            changeScreen('splashScreen');
         }
     </script>
 </body>
