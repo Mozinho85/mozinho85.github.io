@@ -105,7 +105,7 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 12px;
             width: 100%;
-            max-height: 280px; 
+            max-height: 340px; 
             overflow-y: auto;
             padding: 10px;
             box-sizing: border-box;
@@ -125,7 +125,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 8px;
         }
 
         .nation-btn:active, .nation-btn.selected, .ball-card.selected {
@@ -152,6 +152,18 @@
         .ball-card.selected .lock-tag {
             background: #072513;
             color: #f7b500;
+        }
+
+        /* DYNAMIC EMBEDDED FLAG GRAPHICS */
+        .mini-flag {
+            width: 54px;
+            height: 36px;
+            border-radius: 4px;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.3);
+            overflow: hidden;
+            position: relative;
+            background: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
         button.action-btn {
@@ -401,17 +413,65 @@
 
         let careerGoals = parseInt(localStorage.getItem('wc_career_goals')) || 0;
         let highStreak = parseInt(localStorage.getItem('wc_high_streak')) || 0;
-        let activeBallStyle = localStorage.getItem('wc_active_ball') || 'Classic';
+        let activeBallStyle = localStorage.getItem('wc_active_ball') || 'Classic Pentagons';
 
         document.getElementById('careerCounter').innerText = careerGoals;
 
         const ballStyles = [
-            { name: 'Classic', req: 0, primary: '#ffffff', secondary: '#1a1a1a', style: 'classic' },
-            { name: 'Vortex Blue', req: 10, primary: '#00d2ff', secondary: '#003057', style: 'neon' },
-            { name: 'Ember Glow', req: 25, primary: '#ff416c', secondary: '#ff4b2b', style: 'gradient' },
-            { name: 'Emerald Spin', req: 50, primary: '#11998e', secondary: '#38ef7d', style: 'gradient' },
-            { name: 'Shadow Carbon', req: 75, primary: '#2c3e50', secondary: '#000000', style: 'carbon' },
-            { name: 'Golden Vault', req: 100, primary: '#f7b500', secondary: '#fff7ad', style: 'gold' }
+            { 
+                name: 'Classic Pentagons', 
+                req: 0, 
+                primary: '#ffffff', 
+                secondary: '#111111', 
+                style: 'classic-3d',
+                seams: '#cccccc',
+                shine: 'rgba(255,255,255,0.4)'
+            },
+            { 
+                name: 'Vortex Quantum', 
+                req: 10, 
+                primary: '#00b4db', 
+                secondary: '#003057', 
+                style: 'vortex-3d',
+                seams: '#00f0ff',
+                shine: 'rgba(255,255,255,0.6)'
+            },
+            { 
+                name: 'Magma Fuse', 
+                req: 25, 
+                primary: '#ff416c', 
+                secondary: '#8a001c', 
+                style: 'panel-3d',
+                seams: '#ff4b2b',
+                shine: 'rgba(255,255,255,0.5)'
+            },
+            { 
+                name: 'Chrono Matrix', 
+                req: 50, 
+                primary: '#11998e', 
+                secondary: '#0b4e47', 
+                style: 'matrix-3d',
+                seams: '#38ef7d',
+                shine: 'rgba(200,255,220,0.5)'
+            },
+            { 
+                name: 'Shadow Carbon', 
+                req: 75, 
+                primary: '#232526', 
+                secondary: '#0f2027', 
+                style: 'carbon-3d',
+                seams: '#414345',
+                shine: 'rgba(255,255,255,0.2)'
+            },
+            { 
+                name: 'Golden Matchball', 
+                req: 100, 
+                primary: '#f7b500', 
+                secondary: '#8a6400', 
+                style: 'panel-3d',
+                seams: '#fff7ad',
+                shine: 'rgba(255,255,255,0.7)'
+            }
         ];
 
         function changeScreen(targetId) {
@@ -471,20 +531,66 @@
             }
         };
 
+        // ACCURATE REAL-WORLD KIT PROFILES & VECTOR CSS FLAG CONFIGURATIONS
         const nations = [
-            { name: 'Argentina', tag: 'ARG', color: '#74ACDF' },
-            { name: 'Brazil', tag: 'BRA', color: '#009c3b' },
-            { name: 'England', tag: 'ENG', color: '#ce1124' },
-            { name: 'France', tag: 'FRA', color: '#002395' },
-            { name: 'Germany', tag: 'GER', color: '#111111' },
-            { name: 'Spain', tag: 'ESP', color: '#c60b1e' },
-            { name: 'USA', tag: 'USA', color: '#0a3161' },
-            { name: 'Mexico', tag: 'MEX', color: '#006847' },
-            { name: 'Portugal', tag: 'POR', color: '#ff0000' }
+            { 
+                name: 'Argentina', tag: 'ARG', 
+                color: '#74ACDF', keeperColor: '#111111', 
+                kitStyle: 'stripes', stripeColor: '#ffffff', detailColor: '#f7b500', 
+                flagCSS: 'background: linear-gradient(#74ACDF 33.3%, #ffffff 33.3%, #ffffff 66.6%, #74ACDF 66.6%);'
+            },
+            { 
+                name: 'Brazil', tag: 'BRA', 
+                color: '#FEDF00', keeperColor: '#12a454', 
+                kitStyle: 'solid', stripeColor: '#009c3b', detailColor: '#002395',
+                flagCSS: 'background: #009c3b; clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);' // Rendered natively with internal yellow diamond via canvas / fallback
+            },
+            { 
+                name: 'England', tag: 'ENG', 
+                color: '#ffffff', keeperColor: '#ff5722', 
+                kitStyle: 'solid', stripeColor: '#ffffff', detailColor: '#0f2042',
+                flagCSS: 'background: #fff; background-image: linear-gradient(90deg, transparent 42%, #ce1124 42%, #ce1124 58%, transparent 58%), linear-gradient(#ce1124 42%, #ce1124 58%, transparent 58%); background-size: 100% 100%;'
+            },
+            { 
+                name: 'France', tag: 'FRA', 
+                color: '#002395', keeperColor: '#f1c40f', 
+                kitStyle: 'solid', stripeColor: '#002395', detailColor: '#ffffff',
+                flagCSS: 'background: linear-gradient(90deg, #002395 33.3%, #ffffff 33.3%, #ffffff 66.6%, #ed2939 66.6%);'
+            },
+            { 
+                name: 'Germany', tag: 'GER', 
+                color: '#ffffff', keeperColor: '#ff007f', 
+                kitStyle: 'shoulders', stripeColor: '#111111', detailColor: '#dbf200',
+                flagCSS: 'background: linear-gradient(#000 33.3%, #dd0000 33.3%, #dd0000 66.6%, #ffce00 66.6%);'
+            },
+            { 
+                name: 'Spain', tag: 'ESP', 
+                color: '#c60b1e', keeperColor: '#2ecc71', 
+                kitStyle: 'solid', stripeColor: '#c60b1e', detailColor: '#f7b500',
+                flagCSS: 'background: linear-gradient(#c60b1e 25%, #f7b500 25%, #f7b500 75%, #c60b1e 75%);'
+            },
+            { 
+                name: 'USA', tag: 'USA', 
+                color: '#ffffff', keeperColor: '#00b4db', 
+                kitStyle: 'sleeves', stripeColor: '#0a3161', detailColor: '#ce1124',
+                flagCSS: 'background: #fff; background-image: linear-gradient(#b22234 50%, transparent 50%); background-size: 100% 15.38%;'
+            },
+            { 
+                name: 'Mexico', tag: 'MEX', 
+                color: '#006847', keeperColor: '#a800ff', 
+                kitStyle: 'pattern', stripeColor: '#ffffff', detailColor: '#ce1124',
+                flagCSS: 'background: linear-gradient(90deg, #006847 33.3%, #ffffff 33.3%, #ffffff 66.6%, #ce1124 66.6%);'
+            },
+            { 
+                name: 'Portugal', tag: 'POR', 
+                color: '#ff0000', keeperColor: '#34495e', 
+                kitStyle: 'halves', stripeColor: '#006847', detailColor: '#f7b500',
+                flagCSS: 'background: linear-gradient(90deg, #006622 40%, #ff0000 40%);'
+            }
         ];
 
         let activeGameMode = "1P"; 
-        let player1Nation = null; let player2Nation = null;
+        let player1Nation = nations[2]; let player2Nation = nations[5];
         let setupPhase = 1; let score = 0; let streak = 0;
         let currentKicker = 1; let currentRound = 1; let isSuddenDeath = false;
         let p1History = []; let p2History = []; let selectedNationTmp = null;
@@ -523,7 +629,24 @@
                 if (activeGameMode === "2P" && setupPhase === 2 && player1Nation && player1Nation.tag === nation.tag) return;
                 const btn = document.createElement('div');
                 btn.className = 'nation-btn';
-                btn.innerHTML = `<span class="flag-tag">${nation.tag}</span><span>${nation.name}</span>`;
+                
+                // Embedded Real-world CSS Flags
+                let extraDecoration = "";
+                if (nation.tag === 'BRA') {
+                    extraDecoration = `<div style="position:absolute; top:18%; left:25%; width:50%; height:64%; background:#FEDF00; transform:rotate(45deg);"><div style="position:absolute; top:20%; left:20%; width:60%; height:60%; background:#002395; border-radius:50%;"></div></div>`;
+                } else if (nation.tag === 'ARG') {
+                    extraDecoration = `<div style="position:absolute; top:38%; left:41%; width:10px; height:10px; background:#f7b500; border-radius:50%;"></div>`;
+                } else if (nation.tag === 'USA') {
+                    extraDecoration = `<div style="position:absolute; top:0; left:0; width:45%; height:53%; background:#3c3b6e;"></div>`;
+                } else if (nation.tag === 'ESP' || nation.tag === 'MEX') {
+                    extraDecoration = `<div style="position:absolute; top:35%; left:42%; width:8px; height:12px; background:#f7b500; border-radius:2px;"></div>`;
+                }
+
+                btn.innerHTML = `
+                    <div class="mini-flag" style="${nation.flagCSS}">${extraDecoration}</div>
+                    <span style="font-size:11px; color:#aaa; margin-top:-2px;">${nation.tag}</span>
+                    <span style="margin-top:-4px;">${nation.name}</span>
+                `;
                 btn.addEventListener('click', () => {
                     document.querySelectorAll('.nation-btn').forEach(b => b.classList.remove('selected'));
                     btn.classList.add('selected');
@@ -776,9 +899,86 @@
             }
         }
 
-        function drawCrowd(jerseyColor) {
+        // PROCEDURAL DECORATION VECTOR ENGINE FOR SHIRTS
+        function applyKitTexture(targetCtx, x, y, w, h, nation, isGoalkeeper) {
+            targetCtx.save();
+            targetCtx.beginPath();
+            targetCtx.rect(x, y, w, h);
+            targetCtx.clip();
+
+            if (isGoalkeeper) {
+                // Keepers get vibrant geometric patterns
+                targetCtx.fillStyle = nation.keeperColor;
+                targetCtx.fillRect(x, y, w, h);
+                
+                targetCtx.fillStyle = 'rgba(255,255,255,0.15)';
+                targetCtx.beginPath();
+                for(let k = 0; k < w; k += 8) {
+                    targetCtx.moveTo(x + k, y);
+                    targetCtx.lineTo(x + k + 6, y + h);
+                }
+                targetCtx.lineWidth = 3;
+                targetCtx.stroke();
+                
+                // Add cuff accents
+                targetCtx.fillStyle = '#111111';
+                targetCtx.fillRect(x, y + h - 3, w, 3);
+            } else {
+                // Outfield player kit configurations matching real life designs
+                targetCtx.fillStyle = nation.color;
+                targetCtx.fillRect(x, y, w, h);
+
+                if (nation.kitStyle === 'stripes') {
+                    targetCtx.fillStyle = nation.stripeColor;
+                    let stripeW = w / 5;
+                    for (let i = 0; i < w; i += stripeW * 2) {
+                        targetCtx.fillRect(x + i, y, stripeW, h);
+                    }
+                } else if (nation.kitStyle === 'shoulders') {
+                    targetCtx.fillStyle = nation.stripeColor;
+                    targetCtx.fillRect(x, y, w, h * 0.28);
+                    targetCtx.fillStyle = nation.detailColor;
+                    targetCtx.fillRect(x, y + (h * 0.28), w, 3);
+                } else if (nation.kitStyle === 'sleeves') {
+                    targetCtx.fillStyle = nation.stripeColor;
+                    targetCtx.fillRect(x, y, w * 0.18, h);
+                    targetCtx.fillRect(x + w - (w * 0.18), y, w * 0.18, h);
+                } else if (nation.kitStyle === 'halves') {
+                    targetCtx.fillStyle = nation.stripeColor;
+                    targetCtx.fillRect(x, y, w / 2, h);
+                } else if (nation.kitStyle === 'pattern') {
+                    // Geometric cross textures (e.g. Aztec / Mexican wave aesthetics)
+                    targetCtx.strokeStyle = 'rgba(255,255,255,0.18)';
+                    targetCtx.lineWidth = 2;
+                    targetCtx.beginPath();
+                    for(let j = 0; j < w + h; j += 6) {
+                        targetCtx.moveTo(x + j, y);
+                        targetCtx.lineTo(x, y + j);
+                    }
+                    targetCtx.stroke();
+                }
+
+                // Fine structural trim (V-Necks / Crew colors)
+                targetCtx.fillStyle = nation.detailColor;
+                targetCtx.beginPath();
+                targetCtx.moveTo(x + (w/2) - 5, y);
+                targetCtx.lineTo(x + (w/2) + 5, y);
+                targetCtx.lineTo(x + (w/2), y + 6);
+                targetCtx.closePath();
+                targetCtx.fill();
+            }
+
+            // Authentic Golden or Monochromatic Chest Shield Crest Integration
+            targetCtx.fillStyle = '#f7b500';
+            targetCtx.beginPath();
+            targetCtx.arc(x + (w * 0.28), y + (h * 0.35), 2.5, 0, Math.PI*2);
+            targetCtx.fill();
+
+            targetCtx.restore();
+        }
+
+        function drawCrowd(kickingNation, defendingNation) {
             ctx.save();
-            // Background Stadium Stand Structure
             ctx.fillStyle = '#112b16';
             ctx.fillRect(0, 0, canvas.width, goal.y);
             
@@ -787,24 +987,19 @@
                 ctx.fillRect(0, row * 30, canvas.width, 12);
             }
 
-            // Spectators Generation
             let totalColumns = 24;
             let colWidth = canvas.width / totalColumns;
             
             for (let row = 0; row < 4; row++) {
                 let rowY = 22 + (row * 28);
-                
-                // Don't render spectators hidden deeply behind the structural goal framework
                 if (rowY > goal.y - 10) continue;
 
                 for (let col = 0; col < totalColumns; col++) {
                     let colX = (col * colWidth) + (colWidth / 2);
                     
-                    // Add micro-offsets to individual fans so they look organic
                     let speedModifier = 0.09 + (col % 3) * 0.03;
                     let wavePhase = (globalFrameCount * speedModifier) + (col * 0.5) + (row * 1.2);
                     
-                    // Double the bobbing amplitude and pace if a goal is actively being celebrated
                     let waveAmplitude = 3;
                     if (crowdCelebrationTimer > 0) {
                         waveAmplitude = 9;
@@ -813,27 +1008,37 @@
                     
                     let bobbingY = Math.sin(wavePhase) * waveAmplitude;
 
-                    // Alternating fan colors mixed with primary team colors
-                    let fanJersey = jerseyColor;
-                    if ((col + row) % 3 === 0) fanJersey = '#ffffff';
-                    if ((col + row) % 4 === 0) fanJersey = '#222222';
+                    // Crowd distributes into home/away blocks supporting outfield kits
+                    let currentFanNation = (col < totalColumns / 2) ? kickingNation : defendingNation;
+                    if (!currentFanNation) currentFanNation = nations[2];
+
+                    // Neutral casual fans scattered around standard mix
+                    let isNeutral = (col + row) % 5 === 0;
 
                     ctx.save();
                     ctx.translate(colX, rowY + bobbingY);
 
-                    // Body Torso
-                    ctx.fillStyle = fanJersey;
-                    ctx.beginPath();
-                    ctx.arc(0, 8, 8, Math.PI, 0, false);
-                    ctx.fill();
+                    // Render outfield fan shirt bases
+                    if (isNeutral) {
+                        ctx.fillStyle = '#444444';
+                        ctx.beginPath();
+                        ctx.arc(0, 8, 8, Math.PI, 0, false);
+                        ctx.fill();
+                    } else {
+                        // Render full high-detail structural kit properties directly inside the stand profiles
+                        ctx.beginPath();
+                        ctx.arc(0, 8, 8, Math.PI, 0, false);
+                        ctx.closePath();
+                        applyKitTexture(ctx, -8, 0, 16, 12, currentFanNation, false);
+                    }
 
-                    // Head Skin Tone
+                    // Fan skins
                     ctx.fillStyle = (col % 2 === 0) ? '#ffdbac' : '#e0ac69';
                     ctx.beginPath();
                     ctx.arc(0, 0, 5, 0, Math.PI * 2);
                     ctx.fill();
 
-                    // Hair / Headwear Definition
+                    // Fan hair layouts
                     ctx.fillStyle = (col % 3 === 0) ? '#4a3728' : ((col % 3 === 1) ? '#222222' : '#f7b500');
                     ctx.beginPath();
                     ctx.arc(0, -2, 5, Math.PI, 0);
@@ -848,19 +1053,16 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Collect the colors context for the crowd rendering phase
-            let teamJerseyColor = '#ff5722';
-            if (activeGameMode === "1P" && player1Nation) {
-                teamJerseyColor = player1Nation.color;
-            } else if (activeGameMode === "2P") {
-                let activeDefendingNation = (currentKicker === 1) ? player2Nation : player1Nation;
-                if (activeDefendingNation) teamJerseyColor = activeDefendingNation.color;
+            let kickerNationObj = player1Nation;
+            let defenderNationObj = player2Nation;
+
+            if (activeGameMode === "2P") {
+                kickerNationObj = (currentKicker === 1) ? player1Nation : player2Nation;
+                defenderNationObj = (currentKicker === 1) ? player2Nation : player1Nation;
             }
 
-            // Draw Stadium Stands and Animated Fans
-            drawCrowd(teamJerseyColor);
+            drawCrowd(kickerNationObj, defenderNationObj);
 
-            // Turf / Pitch Grass Render Layers
             let pitchGrad = ctx.createLinearGradient(0, goal.y, 0, canvas.height);
             pitchGrad.addColorStop(0, '#0a230c'); pitchGrad.addColorStop(0.3, '#113b15'); pitchGrad.addColorStop(1, '#1e5e25');   
             ctx.fillStyle = pitchGrad; ctx.fillRect(0, goal.y, canvas.width, canvas.height - goal.y);
@@ -879,22 +1081,21 @@
             ctx.moveTo(0, canvas.height - 50); ctx.lineTo(canvas.width, canvas.height - 50); ctx.stroke();
             ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(canvas.width/2, canvas.height - 120, 6, 0, Math.PI * 2); ctx.fill();
 
-            // Net Mesh Screen
             ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
             ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1;
             for (let x = goal.x; x <= goal.x + goal.w; x += 10) { ctx.beginPath(); ctx.moveTo(x, goal.y); ctx.lineTo(x, goal.y + goal.h); ctx.stroke(); }
             for (let y = goal.y; y <= goal.y + goal.h; y += 10) { ctx.beginPath(); ctx.moveTo(goal.x, y); ctx.lineTo(goal.x + goal.w, y); ctx.stroke(); }
 
-            // Goal Posts Outline
             ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.beginPath();
-            ctx.moveTo(goal.x, goal.y + goal.h); ctx.lineTo(goal.x, goal.y); ctx.lineTo(goal.x + goal.w, goal.y); ctx.lineTo(goal.x + goal.w, goal.y + goal.h); ctx.stroke();
+            ctx.moveTo(goal.x, goal.y + goal.h); ctx.lineTo(goal.x, goal.y); ctx.lineTo(goal.x + goal.w, goal.y); ctx.lineTo(goal.x + goal.w, goal.y + goal.h); stroke();
 
-            // Ball Ground Shadow Elements
             ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath();
             let shadowY = (gameState === 'rebounding') ? ball.y + 25 : ball.startY + ((goal.y + goal.h + 10) - ball.startY) * ball.progress;
             ctx.ellipse(ball.x, shadowY, ball.radius * 1.1, ball.radius * 0.4, 0, 0, Math.PI * 2); ctx.fill();
 
-            // Goalkeeper Kit Render Blocks
+            // ==========================================
+            // HIGH DETAIL REALISTIC GOALKEEPER RENDERING
+            // ==========================================
             ctx.save(); 
             ctx.translate(keeper.x, keeper.y);
             
@@ -903,51 +1104,162 @@
             ctx.ellipse(0, 30 + (keeper.baselineY - keeper.y), keeper.w * 0.6, 8, 0, 0, Math.PI * 2); 
             ctx.fill();
             
-            ctx.fillStyle = '#222'; ctx.fillRect(-14, 22, 8, 8); ctx.fillRect(6, 22, 8, 8);
+            // Shorts and base socks
+            ctx.fillStyle = '#111111'; ctx.fillRect(-14, 22, 8, 8); ctx.fillRect(6, 22, 8, 8);
             ctx.fillStyle = '#ffffff'; ctx.fillRect(-14, 12, 8, 10); ctx.fillRect(6, 12, 8, 10);
-            
             ctx.fillStyle = '#111111'; ctx.fillRect(-18, -2, 36, 14); 
             
-            ctx.fillStyle = teamJerseyColor; ctx.fillRect(-18, -32, 36, 30);
+            // Apply unique goalkeeper kit configuration textures
+            applyKitTexture(ctx, -18, -32, 36, 30, defenderNationObj, true);
             
-            ctx.fillStyle = teamJerseyColor; 
+            // Dynamic arms decorated with distinct colors
+            ctx.fillStyle = defenderNationObj.keeperColor; 
             ctx.fillRect(-28, -28, 10, 12); 
             ctx.fillRect(18, -28, 10, 12);  
             
-            ctx.fillStyle = '#ffdbac';
-            ctx.fillRect(-32, -24, 6, 8);  
-            ctx.fillRect(26, -24, 6, 8);   
+            // Padded Goalie Gloves
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(-32, -24, 7, 9);  
+            ctx.fillRect(25, -24, 7, 9);   
+            ctx.strokeStyle = defenderNationObj.detailColor; ctx.lineWidth = 1;
+            ctx.strokeRect(-32, -24, 7, 9); ctx.strokeRect(25, -24, 7, 9);
             
+            // Head and Hair
             ctx.fillStyle = '#ffdbac'; ctx.beginPath(); ctx.arc(0, -43, 11, 0, Math.PI * 2); ctx.fill();
-            
             ctx.fillStyle = '#222'; ctx.beginPath(); ctx.arc(0, -45, 11, Math.PI, 0); ctx.fill();
             
             ctx.restore();
 
-            // Ball Texture Geometry
-            ctx.save(); ctx.translate(ball.x, ball.y);
-            ctx.rotate(ball.progress * 5);
+            // ==========================================
+            // UPGRADED 3D SPINNING BALL TEXTURE GEOMETRY
+            // ==========================================
+            ctx.save(); 
+            ctx.translate(ball.x, ball.y);
             
             let c = ball.config;
-            ctx.fillStyle = c.primary; ctx.strokeStyle = '#1a1a1a'; ctx.lineWidth = Math.max(1.5, ball.radius * 0.08);
-            ctx.beginPath(); ctx.arc(0, 0, Math.max(ball.radius, 3), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+            let r = Math.max(ball.radius, 3);
             
-            ctx.fillStyle = c.secondary;
-            if (ball.radius > 4) {
-                if (c.style === 'classic') {
-                    ctx.beginPath(); ctx.arc(0, 0, ball.radius * 0.32, 0, Math.PI * 2); ctx.fill();
-                    for (let a = 0; a < Math.PI * 2; a += (Math.PI * 2 / 5)) {
-                        ctx.beginPath(); ctx.moveTo(Math.cos(a) * (ball.radius * 0.32), Math.sin(a) * (ball.radius * 0.32));
-                        ctx.lineTo(Math.cos(a) * ball.radius, Math.sin(a) * ball.radius); ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(0, 0, r, 0, Math.PI * 2);
+            ctx.clip();
+            
+            let sphereBase = ctx.createRadialGradient(-r * 0.2, -r * 0.2, r * 0.1, 0, 0, r);
+            sphereBase.addColorStop(0, c.primary);
+            sphereBase.addColorStop(0.8, c.primary);
+            sphereBase.addColorStop(1, c.secondary);
+            ctx.fillStyle = sphereBase;
+            ctx.fill();
+
+            if (r > 4) {
+                ctx.save();
+                let spinAngle = ball.progress * 8 + (ball.spin * 0.05);
+                ctx.rotate(spinAngle);
+                
+                ctx.strokeStyle = c.seams;
+                ctx.lineWidth = Math.max(0.75, r * 0.05);
+                ctx.fillStyle = c.secondary;
+
+                if (c.style === 'classic-3d') {
+                    for (let i = 0; i < 5; i++) {
+                        let angle = (i * Math.PI * 2 / 5);
+                        let px = Math.cos(angle) * (r * 0.45);
+                        let py = Math.sin(angle) * (r * 0.45);
+                        
+                        ctx.beginPath();
+                        for (let p = 0; p < 5; p++) {
+                            let pAngle = angle + (p * Math.PI * 2 / 5);
+                            let localR = (p === 0 || p === 4) ? r * 0.45 : r * 0.18;
+                            let x = Math.cos(pAngle) * localR;
+                            let y = Math.sin(pAngle) * localR;
+                            if (p === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                        ctx.stroke();
+
+                        ctx.beginPath();
+                        ctx.moveTo(px, py);
+                        ctx.quadraticCurveTo(Math.cos(angle)*r*0.7, Math.sin(angle)*r*0.7, Math.cos(angle)*r, Math.sin(angle)*r);
+                        ctx.stroke();
                     }
-                } else if (c.style === 'neon' || c.style === 'gradient') {
-                    ctx.strokeStyle = c.secondary; ctx.lineWidth = ball.radius * 0.15;
-                    ctx.beginPath(); ctx.arc(0, 0, ball.radius * 0.5, 0, Math.PI); ctx.stroke();
-                } else if (c.style === 'carbon' || c.style === 'gold') {
-                    ctx.fillStyle = c.secondary; ctx.beginPath();
-                    ctx.rect(-ball.radius*0.4, -ball.radius*0.4, ball.radius*0.8, ball.radius*0.8); ctx.fill();
+                    
+                    ctx.beginPath();
+                    ctx.arc(0, 0, r * 0.15, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                } else if (c.style === 'vortex-3d') {
+                    ctx.strokeStyle = c.seams;
+                    for (let i = 0; i < 4; i++) {
+                        ctx.beginPath();
+                        ctx.arc(-r * 0.3, -r * 0.3, r * (0.4 + i * 0.3), 0, Math.PI * 2);
+                        ctx.stroke();
+                    }
+                    ctx.strokeStyle = c.primary;
+                    ctx.beginPath();
+                    ctx.arc(r * 0.4, r * 0.4, r * 0.6, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                } else if (c.style === 'panel-3d') {
+                    for (let i = 0; i < 3; i++) {
+                        let rot = (i * Math.PI * 2 / 3);
+                        ctx.save();
+                        ctx.rotate(rot);
+                        ctx.beginPath();
+                        ctx.moveTo(-r, 0);
+                        ctx.bezierCurveTo(-r*0.3, -r*0.6, r*0.3, -r*0.6, r, 0);
+                        ctx.bezierCurveTo(r*0.3, -r*0.2, -r*0.3, -r*0.2, -r, 0);
+                        ctx.fillStyle = c.secondary;
+                        ctx.fill();
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+
+                } else if (c.style === 'matrix-3d') {
+                    ctx.lineWidth = Math.max(0.5, r * 0.03);
+                    for (let i = -3; i <= 3; i++) {
+                        let offset = (i / 4) * r;
+                        ctx.beginPath();
+                        ctx.moveTo(-r, offset);
+                        ctx.quadraticCurveTo(0, offset * 0.4, r, offset);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(offset, -r);
+                        ctx.quadraticCurveTo(offset * 0.4, 0, offset, r);
+                        ctx.stroke();
+                    }
+
+                } else if (c.style === 'carbon-3d') {
+                    ctx.lineWidth = Math.max(1, r * 0.08);
+                    for (let d = -r; d < r; d += r * 0.25) {
+                        ctx.beginPath();
+                        ctx.moveTo(d, -r); ctx.lineTo(d + r, r);
+                        ctx.stroke();
+                        ctx.beginPath();
+                        ctx.moveTo(d, r); ctx.lineTo(d + r, -r);
+                        ctx.stroke();
+                    }
                 }
+                ctx.restore();
             }
+
+            let dHighlight = ctx.createRadialGradient(-r * 0.3, -r * 0.3, r * 0.05, 0, 0, r);
+            dHighlight.addColorStop(0, c.shine);
+            dHighlight.addColorStop(0.3, 'rgba(255,255,255,0.1)');
+            dHighlight.addColorStop(0.7, 'rgba(0,0,0,0)');
+            dHighlight.addColorStop(1, 'rgba(0,0,0,0.65)'); 
+            
+            ctx.fillStyle = dHighlight;
+            ctx.beginPath();
+            ctx.arc(0, 0, r + 1, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.lineWidth = Math.max(1, r * 0.04);
+            ctx.beginPath();
+            ctx.arc(0, 0, r, 0, Math.PI * 2);
+            ctx.stroke();
+
             ctx.restore();
 
             if (gameState === 'result') {
@@ -964,8 +1276,6 @@
                 SoundFX.playGoal(); feedbackText = "GOAL!"; feedbackColor = "#4CD964";
                 careerGoals++; localStorage.setItem('wc_career_goals', careerGoals);
                 document.getElementById('careerCounter').innerText = careerGoals;
-                
-                // Initialize crowd jump celebration sequence frame lifespan
                 crowdCelebrationTimer = 90; 
             } else {
                 SoundFX.playSave(); feedbackText = "MISS!"; feedbackColor = "#FF3B30";
