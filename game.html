@@ -266,7 +266,6 @@
             border-top: 2px solid rgba(255, 255, 255, 0.1); z-index: 20;
         }
 
-        /* EXTRA LIFE POP-UP BANNER ANIMATION */
         #extraLifeBanner {
             position: absolute;
             top: 45%;
@@ -303,7 +302,6 @@
             <div id="audioDebug">Audio Status: Initializing...</div>
             <audio id="bgMusic" src="bgm.mp3" loop preload="auto"></audio>
 
-            <!-- EXTRA LIFE CELEBRATION HUD ELEMENT -->
             <div id="extraLifeBanner">⭐ EXTRA LIFE! ⭐</div>
 
             <!-- SPLASH / MAIN MENU -->
@@ -421,10 +419,10 @@
         function changeScreen(targetId) {
             const screens = ['splashScreen', 'selectorScreen', 'lockerScreen', 'continueScreen', 'gameOverScreen'];
             screens.forEach(id => {
-                document.getElementById(id).style.display = (id === targetId) ? 'flex' : 'none';
+                const el = document.getElementById(id);
+                if (el) el.style.display = (id === targetId) ? 'flex' : 'none';
             });
             
-            // Hide HUD elements if going back to menus
             if (targetId === 'splashScreen' || targetId === 'selectorScreen' || targetId === 'lockerScreen') {
                 document.getElementById('arcadeHUD').style.display = 'none';
                 document.getElementById('p1Board').style.display = 'none';
@@ -494,7 +492,6 @@
         let currentKicker = 1; let currentRound = 1; let isSuddenDeath = false;
         let p1History = []; let p2History = []; let selectedNationTmp = null;
 
-        // AD RECOVERY CONFIGURATION STATE
         let adSavesRemaining = 3;
         let countdownTimerInterval = null;
         let countdownSecondsLeft = 5;
@@ -555,7 +552,6 @@
             }
         });
 
-        // --- LOCKER ROOM LOGIC ---
         function openLockerRoom() {
             changeScreen('lockerScreen');
             const bGrid = document.getElementById('ballGrid');
@@ -779,6 +775,8 @@
         }
 
         function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
             let pitchGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
             pitchGrad.addColorStop(0, '#0a230c'); pitchGrad.addColorStop(0.3, '#113b15'); pitchGrad.addColorStop(1, '#1e5e25');   
             ctx.fillStyle = pitchGrad; ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -799,7 +797,7 @@
 
             ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
             ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1;
-            for (let x = goal.x; x <= goal.x + goal.w; x += 10) { ctx.beginPath(); ctx.moveTo(x, goal.y); ctx.lineTo(x, goal.y + goal.h); stroke(); }
+            for (let x = goal.x; x <= goal.x + goal.w; x += 10) { ctx.beginPath(); ctx.moveTo(x, goal.y); ctx.lineTo(x, goal.y + goal.h); ctx.stroke(); }
             for (let y = goal.y; y <= goal.y + goal.h; y += 10) { ctx.beginPath(); ctx.moveTo(goal.x, y); ctx.lineTo(goal.x + goal.w, y); ctx.stroke(); }
 
             ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.beginPath();
@@ -809,7 +807,6 @@
             let shadowY = (gameState === 'rebounding') ? ball.y + 25 : ball.startY + ((goal.y + goal.h + 10) - ball.startY) * ball.progress;
             ctx.ellipse(ball.x, shadowY, ball.radius * 1.1, ball.radius * 0.4, 0, 0, Math.PI * 2); ctx.fill();
 
-            // KEEPER
             let currentDefendingColor = '#ff5722';
             if (activeGameMode === "2P") {
                 let defNation = (currentKicker === 1) ? player2Nation : player1Nation;
@@ -822,7 +819,6 @@
             ctx.fillStyle = '#ffdbac'; ctx.beginPath(); ctx.arc(0, -48, 11, 0, Math.PI * 2); ctx.fill();
             ctx.restore();
 
-            // BALL RE-RENDER ENCLOSURES
             ctx.save(); ctx.translate(ball.x, ball.y);
             ctx.rotate(ball.progress * 5);
             
@@ -875,7 +871,6 @@
                     document.getElementById('uiScore').innerText = score;
                     document.getElementById('uiStreak').innerText = streak;
 
-                    // MILESTONE LIFE GENERATION ENGINE (10, 20, 30...)
                     if (streak % 10 === 0 && streak > 0) {
                         adSavesRemaining++;
                         triggerExtraLifeBannerAnimation();
@@ -899,7 +894,6 @@
             }
         }
 
-        // --- FLASH EXTRA LIFE TEXT POPUP CELEBRATION ---
         function triggerExtraLifeBannerAnimation() {
             const elBanner = document.getElementById('extraLifeBanner');
             elBanner.classList.add('show');
@@ -909,7 +903,6 @@
             }, 1800);
         }
 
-        // --- WATCH AD TO CONTINUE ENGINE STAGE ---
         function launchContinueVerificationScreen() {
             gameState = 'prompt';
             document.getElementById('continueStreakVal').innerText = streak;
@@ -1009,8 +1002,8 @@
         }
 
         function startGame() {
-            // Remove selection visibility completely safely using the wrapper engine
             changeScreen(''); 
+            resizeCanvas();
             
             if (activeGameMode === "1P") {
                 document.getElementById('turnIndicator').style.display = "none";
