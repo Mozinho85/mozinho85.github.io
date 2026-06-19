@@ -10,7 +10,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
-    <!-- GOOGLE ADSENSE CLIENT SCRIPT -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9853366444571043" crossorigin="anonymous"></script>
 
     <style>
@@ -304,7 +303,6 @@
 
             <div id="extraLifeBanner">⭐ EXTRA LIFE! ⭐</div>
 
-            <!-- SPLASH / MAIN MENU -->
             <div id="splashScreen" class="screen">
                 <h1 style="font-size: 36px; margin-bottom: 20px; color: #f7b500;">PENALTY CUP<br><span style="color:#fff; font-size:20px;">WORLD CUP 2026</span></h1>
                 <div style="font-size: 12px; color: #aaa; margin-bottom: 15px;">Career Goals Scoreline: <span id="careerCounter" style="color:#4CD964; font-weight:bold;">0</span></div>
@@ -313,7 +311,6 @@
                 <button class="menu-btn" onclick="openLockerRoom()" style="border-color: #f7b500; font-size:15px; width:60%;">⚽ Locker Room</button>
             </div>
 
-            <!-- NATION SELECTOR -->
             <div id="selectorScreen" class="screen" style="display: none;">
                 <h1 id="selectionTitle">CHOOSE YOUR TEAM</h1>
                 <p>Select your nation to take the pitch</p>
@@ -321,7 +318,6 @@
                 <button class="action-btn" id="startBtn" disabled>CONFIRM</button>
             </div>
 
-            <!-- LOCKER ROOM (BALL UNLOCKS) -->
             <div id="lockerScreen" class="screen" style="display: none;">
                 <h1>LOCKER ROOM</h1>
                 <p>Unlock custom designs by hitting streaks!</p>
@@ -329,7 +325,6 @@
                 <button class="action-btn" onclick="closeLockerRoom()">BACK TO MENU</button>
             </div>
 
-            <!-- AD STREAK CONTINUATION POPUP -->
             <div id="continueScreen" class="screen" style="display: none; background: rgba(7, 37, 19, 0.95); z-index: 100;">
                 <h1 style="color: #FF3B30;">STREAK AT RISK!</h1>
                 <p style="margin-bottom: 5px;">You missed the shot!</p>
@@ -340,7 +335,6 @@
                 <button class="menu-btn" style="background:transparent; border:none; color:#aaa; font-size:14px; text-decoration:underline;" onclick="skipRecovery()">No thanks, end match</button>
             </div>
 
-            <!-- FAKE INTERSTITIAL AD BREAK OVERLAY -->
             <div id="adOverlay">
                 <div style="color: #aaa; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px;">Sponsored Advertisement</div>
                 <div style="font-size: 24px; color: #fff; margin-bottom: 30px;" id="adStatusTxt">Loading Ad Campaign...</div>
@@ -349,7 +343,6 @@
 
             <div id="turnIndicator">PLAYER 1 SHOOTING</div>
 
-            <!-- SCOREBOARD LAYER -->
             <div id="scoreboardUI">
                 <div id="arcadeHUD" style="display: none;">
                     <div>TEAM: <span id="uiTeam" style="color: #f7b500;">---</span></div>
@@ -375,7 +368,6 @@
                 <canvas id="gameCanvas"></canvas>
             </div>
 
-            <!-- GAME OVER RESULTS -->
             <div id="gameOverScreen" class="screen" style="display: none;">
                 <h1 id="winStatusText">MATCH OVER</h1>
                 <p id="finalScoreText">Final Scoreline: 3 - 2</p>
@@ -383,7 +375,6 @@
             </div>
         </div>
 
-        <!-- LIVE BOTTOM BANNER UNIT -->
         <div class="ad-container">
             <ins class="adsbygoogle"
                  style="display:inline-block;width:320px;height:50px"
@@ -659,7 +650,7 @@
         }
 
         function handleEnd() {
-           if (!isTrackingSwipe || swipePoints.length < 3) { isTrackingSwipe = false; return; }
+            if (!isTrackingSwipe || swipePoints.length < 3) { isTrackingSwipe = false; return; }
             isTrackingSwipe = false;
 
             let first = swipePoints[0]; let last = swipePoints[swipePoints.length - 1];
@@ -698,8 +689,7 @@
 
                 ball.progress = 0; gameState = 'shooting'; keeper.state = 'diving';
 
-                // --- TUNED KEEPER EFFICIENCY BELOW ---
-                // Increased error margin ranges so the keeper guesses less accurately
+                // --- REDUCED GOALKEEPER EFFICIENCY WINDOW ---
                 let errorMarginValue = 120; 
                 if (activeGameMode === "1P" && streak < 10) {
                     errorMarginValue = 220 - (streak * 10); 
@@ -744,8 +734,9 @@
                 ball.radius = ball.startRadius + (ball.targetRadius - ball.startRadius) * ball.progress;
 
                 if (keeper.state === 'diving') {
-                    keeper.x += (keeper.targetX - keeper.x) * 0.025; 
-                    keeper.y += (keeper.targetY - keeper.y) * 0.025; 
+                    // Slower interpolation rate (0.038) ensures goalkeeper doesn't save shots instantly
+                    keeper.x += (keeper.targetX - keeper.x) * 0.038; 
+                    keeper.y += (keeper.targetY - keeper.y) * 0.038; 
                 }
 
                 if (ball.progress >= 1) {
@@ -809,17 +800,50 @@
             let shadowY = (gameState === 'rebounding') ? ball.y + 25 : ball.startY + ((goal.y + goal.h + 10) - ball.startY) * ball.progress;
             ctx.ellipse(ball.x, shadowY, ball.radius * 1.1, ball.radius * 0.4, 0, 0, Math.PI * 2); ctx.fill();
 
+            // --- RESTORED GOALKEEPER GRAPHICS (WITH EXTENDED ARMS) ---
             let currentDefendingColor = '#ff5722';
             if (activeGameMode === "2P") {
                 let defNation = (currentKicker === 1) ? player2Nation : player1Nation;
                 if (defNation) currentDefendingColor = defNation.color;
             }
-            ctx.save(); ctx.translate(keeper.x, keeper.y);
-            ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath(); ctx.ellipse(0, 30 + (keeper.baselineY - keeper.y), keeper.w * 0.6, 8, 0, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#222'; ctx.fillRect(-18, 22, 10, 8); ctx.fillRect(8, 22, 10, 8);
-            ctx.fillStyle = '#111111'; ctx.fillRect(-18, -2, 36, 14); ctx.fillStyle = currentDefendingColor; ctx.fillRect(-20, -37, 40, 35);
-            ctx.fillStyle = '#ffdbac'; ctx.beginPath(); ctx.arc(0, -48, 11, 0, Math.PI * 2); ctx.fill();
+            
+            ctx.save(); 
+            ctx.translate(keeper.x, keeper.y);
+            
+            // Ground Shadow
+            ctx.fillStyle = 'rgba(0,0,0,0.35)'; 
+            ctx.beginPath(); 
+            ctx.ellipse(0, 30 + (keeper.baselineY - keeper.y), keeper.w * 0.6, 8, 0, 0, Math.PI * 2); 
+            ctx.fill();
+            
+            // Boots & Socks
+            ctx.fillStyle = '#222'; ctx.fillRect(-14, 22, 8, 8); ctx.fillRect(6, 22, 8, 8);
+            ctx.fillStyle = '#ffffff'; ctx.fillRect(-14, 12, 8, 10); ctx.fillRect(6, 12, 8, 10);
+            
+            // Shorts
+            ctx.fillStyle = '#111111'; ctx.fillRect(-18, -2, 36, 14); 
+            
+            // Torso (Jersey)
+            ctx.fillStyle = currentDefendingColor; ctx.fillRect(-18, -32, 36, 30);
+            
+            // Left & Right Arms
+            ctx.fillStyle = currentDefendingColor; 
+            ctx.fillRect(-28, -28, 10, 12); // Left Arm sleeve
+            ctx.fillRect(18, -28, 10, 12);  // Right Arm sleeve
+            
+            // Hands (Skin tone)
+            ctx.fillStyle = '#ffdbac';
+            ctx.fillRect(-32, -24, 6, 8);  
+            ctx.fillRect(26, -24, 6, 8);   
+            
+            // Head
+            ctx.fillStyle = '#ffdbac'; ctx.beginPath(); ctx.arc(0, -43, 11, 0, Math.PI * 2); ctx.fill();
+            
+            // Cap/Hair Definition
+            ctx.fillStyle = '#222'; ctx.beginPath(); ctx.arc(0, -45, 11, Math.PI, 0); ctx.fill();
+            
             ctx.restore();
+            // --- END GOALKEEPER GRAPHICS ---
 
             ctx.save(); ctx.translate(ball.x, ball.y);
             ctx.rotate(ball.progress * 5);
