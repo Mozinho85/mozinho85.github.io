@@ -606,9 +606,9 @@
 
             if (activeGameMode === "1P") {
                 let progressFactor = Math.min(streak, 100) / 100;
-                initialSpeed = 2.0 + (progressFactor * 3.2); 
+                initialSpeed = 1.0 + (progressFactor * 3.2); 
             } else {
-                initialSpeed = 2.0 + Math.min((currentRound - 1) * 0.3, 2.2);
+                initialSpeed = 1.0 + Math.min((currentRound - 1) * 0.3, 2.2);
                 let totalShotsTaken = (currentKicker === 1) ? p1History.length : p2History.length;
                 if (totalShotsTaken === 4 || isSuddenDeath) {
                     isFifthShotOrSuddenDeath = true;
