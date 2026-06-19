@@ -10,6 +10,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
+    <!-- GOOGLE ADSENSE CLIENT SCRIPT -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9853366444571043" crossorigin="anonymous"></script>
 
     <style>
@@ -303,6 +304,7 @@
 
             <div id="extraLifeBanner">⭐ EXTRA LIFE! ⭐</div>
 
+            <!-- SPLASH / MAIN MENU -->
             <div id="splashScreen" class="screen">
                 <h1 style="font-size: 36px; margin-bottom: 20px; color: #f7b500;">PENALTY CUP<br><span style="color:#fff; font-size:20px;">WORLD CUP 2026</span></h1>
                 <div style="font-size: 12px; color: #aaa; margin-bottom: 15px;">Career Goals Scoreline: <span id="careerCounter" style="color:#4CD964; font-weight:bold;">0</span></div>
@@ -311,6 +313,7 @@
                 <button class="menu-btn" onclick="openLockerRoom()" style="border-color: #f7b500; font-size:15px; width:60%;">⚽ Locker Room</button>
             </div>
 
+            <!-- NATION SELECTOR -->
             <div id="selectorScreen" class="screen" style="display: none;">
                 <h1 id="selectionTitle">CHOOSE YOUR TEAM</h1>
                 <p>Select your nation to take the pitch</p>
@@ -318,6 +321,7 @@
                 <button class="action-btn" id="startBtn" disabled>CONFIRM</button>
             </div>
 
+            <!-- LOCKER ROOM (BALL UNLOCKS) -->
             <div id="lockerScreen" class="screen" style="display: none;">
                 <h1>LOCKER ROOM</h1>
                 <p>Unlock custom designs by hitting streaks!</p>
@@ -325,6 +329,7 @@
                 <button class="action-btn" onclick="closeLockerRoom()">BACK TO MENU</button>
             </div>
 
+            <!-- AD STREAK CONTINUATION POPUP -->
             <div id="continueScreen" class="screen" style="display: none; background: rgba(7, 37, 19, 0.95); z-index: 100;">
                 <h1 style="color: #FF3B30;">STREAK AT RISK!</h1>
                 <p style="margin-bottom: 5px;">You missed the shot!</p>
@@ -335,6 +340,7 @@
                 <button class="menu-btn" style="background:transparent; border:none; color:#aaa; font-size:14px; text-decoration:underline;" onclick="skipRecovery()">No thanks, end match</button>
             </div>
 
+            <!-- FAKE INTERSTITIAL AD BREAK OVERLAY -->
             <div id="adOverlay">
                 <div style="color: #aaa; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px;">Sponsored Advertisement</div>
                 <div style="font-size: 24px; color: #fff; margin-bottom: 30px;" id="adStatusTxt">Loading Ad Campaign...</div>
@@ -343,6 +349,7 @@
 
             <div id="turnIndicator">PLAYER 1 SHOOTING</div>
 
+            <!-- SCOREBOARD LAYER -->
             <div id="scoreboardUI">
                 <div id="arcadeHUD" style="display: none;">
                     <div>TEAM: <span id="uiTeam" style="color: #f7b500;">---</span></div>
@@ -368,6 +375,7 @@
                 <canvas id="gameCanvas"></canvas>
             </div>
 
+            <!-- GAME OVER RESULTS -->
             <div id="gameOverScreen" class="screen" style="display: none;">
                 <h1 id="winStatusText">MATCH OVER</h1>
                 <p id="finalScoreText">Final Scoreline: 3 - 2</p>
@@ -375,6 +383,7 @@
             </div>
         </div>
 
+        <!-- LIVE BOTTOM BANNER UNIT -->
         <div class="ad-container">
             <ins class="adsbygoogle"
                  style="display:inline-block;width:320px;height:50px"
@@ -390,7 +399,6 @@
     <script>
         const debugDiv = document.getElementById('audioDebug');
 
-        // --- CAREER AND BALL STORAGE DEFINITIONS ---
         let careerGoals = parseInt(localStorage.getItem('wc_career_goals')) || 0;
         let highStreak = parseInt(localStorage.getItem('wc_high_streak')) || 0;
         let activeBallStyle = localStorage.getItem('wc_active_ball') || 'Classic';
@@ -406,7 +414,6 @@
             { name: 'Golden Vault', req: 100, primary: '#f7b500', secondary: '#fff7ad', style: 'gold' }
         ];
 
-        // --- SCREEN ROUTER ENGINE ---
         function changeScreen(targetId) {
             const screens = ['splashScreen', 'selectorScreen', 'lockerScreen', 'continueScreen', 'gameOverScreen'];
             screens.forEach(id => {
@@ -423,7 +430,6 @@
             }
         }
 
-        // --- AUDIO ENGINE ---
         const SoundFX = {
             ctx: null, bgAudio: null,
             init() {
@@ -486,6 +492,8 @@
         let adSavesRemaining = 3;
         let countdownTimerInterval = null;
         let countdownSecondsLeft = 5;
+        let globalFrameCount = 0;
+        let crowdCelebrationTimer = 0;
 
         const grid = document.getElementById('nationGrid');
         const startBtn = document.getElementById('startBtn');
@@ -689,7 +697,6 @@
 
                 ball.progress = 0; gameState = 'shooting'; keeper.state = 'diving';
 
-                // --- REDUCED GOALKEEPER EFFICIENCY WINDOW ---
                 let errorMarginValue = 120; 
                 if (activeGameMode === "1P" && streak < 10) {
                     errorMarginValue = 220 - (streak * 10); 
@@ -714,6 +721,9 @@
         canvas.addEventListener('mouseup', () => handleEnd());
 
         function update() {
+            globalFrameCount++;
+            if (crowdCelebrationTimer > 0) crowdCelebrationTimer--;
+
             if (gameState === 'aiming') {
                 keeper.x += keeper.speed * keeper.dir;
                 if (keeper.x - keeper.w/2 < goal.x || keeper.x + keeper.w/2 > goal.x + goal.w) {
@@ -734,7 +744,6 @@
                 ball.radius = ball.startRadius + (ball.targetRadius - ball.startRadius) * ball.progress;
 
                 if (keeper.state === 'diving') {
-                    // Slower interpolation rate (0.038) ensures goalkeeper doesn't save shots instantly
                     keeper.x += (keeper.targetX - keeper.x) * 0.038; 
                     keeper.y += (keeper.targetY - keeper.y) * 0.038; 
                 }
@@ -767,12 +776,94 @@
             }
         }
 
+        function drawCrowd(jerseyColor) {
+            ctx.save();
+            // Background Stadium Stand Structure
+            ctx.fillStyle = '#112b16';
+            ctx.fillRect(0, 0, canvas.width, goal.y);
+            
+            ctx.fillStyle = '#0e2212';
+            for (let row = 0; row < 4; row++) {
+                ctx.fillRect(0, row * 30, canvas.width, 12);
+            }
+
+            // Spectators Generation
+            let totalColumns = 24;
+            let colWidth = canvas.width / totalColumns;
+            
+            for (let row = 0; row < 4; row++) {
+                let rowY = 22 + (row * 28);
+                
+                // Don't render spectators hidden deeply behind the structural goal framework
+                if (rowY > goal.y - 10) continue;
+
+                for (let col = 0; col < totalColumns; col++) {
+                    let colX = (col * colWidth) + (colWidth / 2);
+                    
+                    // Add micro-offsets to individual fans so they look organic
+                    let speedModifier = 0.09 + (col % 3) * 0.03;
+                    let wavePhase = (globalFrameCount * speedModifier) + (col * 0.5) + (row * 1.2);
+                    
+                    // Double the bobbing amplitude and pace if a goal is actively being celebrated
+                    let waveAmplitude = 3;
+                    if (crowdCelebrationTimer > 0) {
+                        waveAmplitude = 9;
+                        wavePhase = (globalFrameCount * 0.35) + (col * 0.8);
+                    }
+                    
+                    let bobbingY = Math.sin(wavePhase) * waveAmplitude;
+
+                    // Alternating fan colors mixed with primary team colors
+                    let fanJersey = jerseyColor;
+                    if ((col + row) % 3 === 0) fanJersey = '#ffffff';
+                    if ((col + row) % 4 === 0) fanJersey = '#222222';
+
+                    ctx.save();
+                    ctx.translate(colX, rowY + bobbingY);
+
+                    // Body Torso
+                    ctx.fillStyle = fanJersey;
+                    ctx.beginPath();
+                    ctx.arc(0, 8, 8, Math.PI, 0, false);
+                    ctx.fill();
+
+                    // Head Skin Tone
+                    ctx.fillStyle = (col % 2 === 0) ? '#ffdbac' : '#e0ac69';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 5, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Hair / Headwear Definition
+                    ctx.fillStyle = (col % 3 === 0) ? '#4a3728' : ((col % 3 === 1) ? '#222222' : '#f7b500');
+                    ctx.beginPath();
+                    ctx.arc(0, -2, 5, Math.PI, 0);
+                    ctx.fill();
+
+                    ctx.restore();
+                }
+            }
+            ctx.restore();
+        }
+
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            let pitchGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            // Collect the colors context for the crowd rendering phase
+            let teamJerseyColor = '#ff5722';
+            if (activeGameMode === "1P" && player1Nation) {
+                teamJerseyColor = player1Nation.color;
+            } else if (activeGameMode === "2P") {
+                let activeDefendingNation = (currentKicker === 1) ? player2Nation : player1Nation;
+                if (activeDefendingNation) teamJerseyColor = activeDefendingNation.color;
+            }
+
+            // Draw Stadium Stands and Animated Fans
+            drawCrowd(teamJerseyColor);
+
+            // Turf / Pitch Grass Render Layers
+            let pitchGrad = ctx.createLinearGradient(0, goal.y, 0, canvas.height);
             pitchGrad.addColorStop(0, '#0a230c'); pitchGrad.addColorStop(0.3, '#113b15'); pitchGrad.addColorStop(1, '#1e5e25');   
-            ctx.fillStyle = pitchGrad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = pitchGrad; ctx.fillRect(0, goal.y, canvas.width, canvas.height - goal.y);
 
             ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
             for (let i = 0; i < 6; i++) {
@@ -788,63 +879,52 @@
             ctx.moveTo(0, canvas.height - 50); ctx.lineTo(canvas.width, canvas.height - 50); ctx.stroke();
             ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(canvas.width/2, canvas.height - 120, 6, 0, Math.PI * 2); ctx.fill();
 
-            ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
-            ctx.strokeStyle = 'rgba(255,255,255,0.15)'; ctx.lineWidth = 1;
+            // Net Mesh Screen
+            ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
+            ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1;
             for (let x = goal.x; x <= goal.x + goal.w; x += 10) { ctx.beginPath(); ctx.moveTo(x, goal.y); ctx.lineTo(x, goal.y + goal.h); ctx.stroke(); }
             for (let y = goal.y; y <= goal.y + goal.h; y += 10) { ctx.beginPath(); ctx.moveTo(goal.x, y); ctx.lineTo(goal.x + goal.w, y); ctx.stroke(); }
 
+            // Goal Posts Outline
             ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.beginPath();
             ctx.moveTo(goal.x, goal.y + goal.h); ctx.lineTo(goal.x, goal.y); ctx.lineTo(goal.x + goal.w, goal.y); ctx.lineTo(goal.x + goal.w, goal.y + goal.h); ctx.stroke();
 
+            // Ball Ground Shadow Elements
             ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath();
             let shadowY = (gameState === 'rebounding') ? ball.y + 25 : ball.startY + ((goal.y + goal.h + 10) - ball.startY) * ball.progress;
             ctx.ellipse(ball.x, shadowY, ball.radius * 1.1, ball.radius * 0.4, 0, 0, Math.PI * 2); ctx.fill();
 
-            // --- RESTORED GOALKEEPER GRAPHICS (WITH EXTENDED ARMS) ---
-            let currentDefendingColor = '#ff5722';
-            if (activeGameMode === "2P") {
-                let defNation = (currentKicker === 1) ? player2Nation : player1Nation;
-                if (defNation) currentDefendingColor = defNation.color;
-            }
-            
+            // Goalkeeper Kit Render Blocks
             ctx.save(); 
             ctx.translate(keeper.x, keeper.y);
             
-            // Ground Shadow
             ctx.fillStyle = 'rgba(0,0,0,0.35)'; 
             ctx.beginPath(); 
             ctx.ellipse(0, 30 + (keeper.baselineY - keeper.y), keeper.w * 0.6, 8, 0, 0, Math.PI * 2); 
             ctx.fill();
             
-            // Boots & Socks
             ctx.fillStyle = '#222'; ctx.fillRect(-14, 22, 8, 8); ctx.fillRect(6, 22, 8, 8);
             ctx.fillStyle = '#ffffff'; ctx.fillRect(-14, 12, 8, 10); ctx.fillRect(6, 12, 8, 10);
             
-            // Shorts
             ctx.fillStyle = '#111111'; ctx.fillRect(-18, -2, 36, 14); 
             
-            // Torso (Jersey)
-            ctx.fillStyle = currentDefendingColor; ctx.fillRect(-18, -32, 36, 30);
+            ctx.fillStyle = teamJerseyColor; ctx.fillRect(-18, -32, 36, 30);
             
-            // Left & Right Arms
-            ctx.fillStyle = currentDefendingColor; 
-            ctx.fillRect(-28, -28, 10, 12); // Left Arm sleeve
-            ctx.fillRect(18, -28, 10, 12);  // Right Arm sleeve
+            ctx.fillStyle = teamJerseyColor; 
+            ctx.fillRect(-28, -28, 10, 12); 
+            ctx.fillRect(18, -28, 10, 12);  
             
-            // Hands (Skin tone)
             ctx.fillStyle = '#ffdbac';
             ctx.fillRect(-32, -24, 6, 8);  
             ctx.fillRect(26, -24, 6, 8);   
             
-            // Head
             ctx.fillStyle = '#ffdbac'; ctx.beginPath(); ctx.arc(0, -43, 11, 0, Math.PI * 2); ctx.fill();
             
-            // Cap/Hair Definition
             ctx.fillStyle = '#222'; ctx.beginPath(); ctx.arc(0, -45, 11, Math.PI, 0); ctx.fill();
             
             ctx.restore();
-            // --- END GOALKEEPER GRAPHICS ---
 
+            // Ball Texture Geometry
             ctx.save(); ctx.translate(ball.x, ball.y);
             ctx.rotate(ball.progress * 5);
             
@@ -884,6 +964,9 @@
                 SoundFX.playGoal(); feedbackText = "GOAL!"; feedbackColor = "#4CD964";
                 careerGoals++; localStorage.setItem('wc_career_goals', careerGoals);
                 document.getElementById('careerCounter').innerText = careerGoals;
+                
+                // Initialize crowd jump celebration sequence frame lifespan
+                crowdCelebrationTimer = 90; 
             } else {
                 SoundFX.playSave(); feedbackText = "MISS!"; feedbackColor = "#FF3B30";
             }
