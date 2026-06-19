@@ -659,7 +659,7 @@
         }
 
         function handleEnd() {
-            if (!isTrackingSwipe || swipePoints.length < 3) { isTrackingSwipe = false; return; }
+           if (!isTrackingSwipe || swipePoints.length < 3) { isTrackingSwipe = false; return; }
             isTrackingSwipe = false;
 
             let first = swipePoints[0]; let last = swipePoints[swipePoints.length - 1];
@@ -698,9 +698,11 @@
 
                 ball.progress = 0; gameState = 'shooting'; keeper.state = 'diving';
 
-                let errorMarginValue = 80; 
+                // --- TUNED KEEPER EFFICIENCY BELOW ---
+                // Increased error margin ranges so the keeper guesses less accurately
+                let errorMarginValue = 120; 
                 if (activeGameMode === "1P" && streak < 10) {
-                    errorMarginValue = 160 - (streak * 8); 
+                    errorMarginValue = 220 - (streak * 10); 
                 }
                 let errorMargin = (Math.random() * (errorMarginValue * 2) - errorMarginValue); 
                 keeper.targetX = Math.max(goal.x + 10, Math.min(goal.x + goal.w - 10, ball.targetX + errorMargin));
@@ -742,8 +744,8 @@
                 ball.radius = ball.startRadius + (ball.targetRadius - ball.startRadius) * ball.progress;
 
                 if (keeper.state === 'diving') {
-                    keeper.x += (keeper.targetX - keeper.x) * 0.055; 
-                    keeper.y += (keeper.targetY - keeper.y) * 0.055; 
+                    keeper.x += (keeper.targetX - keeper.x) * 0.025; 
+                    keeper.y += (keeper.targetY - keeper.y) * 0.025; 
                 }
 
                 if (ball.progress >= 1) {
