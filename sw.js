@@ -1,7 +1,8 @@
-const CACHE_NAME = 'penalty-cup-v1';
+const CACHE_NAME = 'penalty-cup-v2';
 const ASSETS = [
   './',
   './index.html',
+  './game.html',
   './bgm.mp3',
   './manifest.json',
   './icon-192.png',

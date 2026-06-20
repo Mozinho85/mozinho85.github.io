@@ -243,6 +243,7 @@
         .dot.miss { background: #FF3B30; }
 
         #audioDebug {
+            display: none;
             position: absolute; bottom: 5px; left: 5px; font-size: 10px;
             color: rgba(255,255,255,0.4); z-index: 100; pointer-events: none;
         }
@@ -1463,6 +1464,14 @@
 
         function resetToMainMenu() {
             changeScreen('splashScreen');
+        }
+
+        // Register the service worker for offline play & PWA install.
+        // Relative path keeps this working under a GitHub Pages project subpath.
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            });
         }
     </script>
 </body>

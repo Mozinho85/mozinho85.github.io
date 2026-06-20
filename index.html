@@ -8,6 +8,9 @@
     <meta name="google-adsense-account" content="ca-pub-9853366444571043">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9853366444571043" crossorigin="anonymous"></script>
 
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#124e28">
+
     <style>
         body {
             margin: 0;
@@ -137,6 +140,16 @@
         <p>This application utilizes Google AdSense monetization layers to serve inline contextual marketing elements. Google AdSense utilizes advanced system tracking files and identifiers, including <strong>cookies</strong>, to distribute optimized ad experiences based on previous navigation paths across external domains.</p>
         <p>Users maintain full operational control over tracking definitions and can choose to decline individual cookie files or completely disable third-party vendor tracking setups by visiting the official Google Ads Settings page or adjusting their local browser security preferences.</p>
     </div>
+
+    <script>
+        // Register the service worker for offline play & PWA install.
+        // Relative path keeps this working under a GitHub Pages project subpath.
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            });
+        }
+    </script>
 
 </body>
 </html>
