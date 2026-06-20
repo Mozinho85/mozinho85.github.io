@@ -1,4 +1,4 @@
-const CACHE_NAME = 'penalty-cup-v6';
+const CACHE_NAME = 'penalty-cup-v10';
 const ASSETS = [
   './',
   './index.html',

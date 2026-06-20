@@ -61,6 +61,22 @@
                     gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
                     osc.start(now); osc.stop(now + 0.5);
                 });
+            },
+            playPost() {
+                // Woody "donk" off the woodwork: a low triangle thunk + a hard click.
+                this.init(); let now = this.ctx.currentTime;
+                let osc = this.ctx.createOscillator(); let gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(230, now); osc.frequency.exponentialRampToValueAtTime(85, now + 0.13);
+                gain.gain.setValueAtTime(0.55, now); gain.gain.exponentialRampToValueAtTime(0.001, now + 0.2);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(now); osc.stop(now + 0.2);
+                let click = this.ctx.createOscillator(); let cg = this.ctx.createGain();
+                click.type = 'square';
+                click.frequency.setValueAtTime(620, now); click.frequency.exponentialRampToValueAtTime(180, now + 0.05);
+                cg.gain.setValueAtTime(0.22, now); cg.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+                click.connect(cg); cg.connect(this.ctx.destination);
+                click.start(now); click.stop(now + 0.06);
             }
         };
 
@@ -217,14 +233,34 @@
         let ball, keeper, goal, gameState;
         let swipePoints = []; let isTrackingSwipe = false;
         
+        // --- Goalkeeper balance --------------------------------------------------
+        // The save decision is ALWAYS "is the ball within catch range of the keeper's
+        // hit box" (KEEPER_CATCH_REACH) — this never changes with difficulty.
+        // Difficulty only changes how far the keeper can DIVE to get its hit box near
+        // the ball, and that dive is hard-capped, so a shot placed far enough from the
+        // keeper always beats it, even when the keeper is fast.
+        const KEEPER_CATCH_REACH = 15;     // fingertip range beyond the body box (px)
+        const KEEPER_HITBOX_HALF_H = 40;   // vertical half-extent of the keeper body box
+
+        // Max horizontal distance the keeper can cover on a dive (px). Scales with
+        // difficulty but is capped to ~30% of the goal width, guaranteeing the far
+        // side of the goal is always reachable for the shooter.
+        function keeperDiveReach() {
+            let r = (activeGameMode === "1P")
+                ? 60 + Math.min(streak, 26) * 1.0
+                : 72 + Math.min((currentRound - 1) * 3, 15);
+            return Math.min(r, goal.w * 0.30);
+        }
+
         function initEntities() {
             goal = { x: canvas.width * 0.15, y: 140, w: canvas.width * 0.7, h: 130 };
 
             ball = {
                 startX: canvas.width / 2, startY: canvas.height - 120,
                 x: canvas.width / 2, y: canvas.height - 120,
-                targetX: 0, targetY: 0, radius: 22, startRadius: 22, targetRadius: 8,  
-                progress: 0, speed: 0.035, bounceVx: 0, bounceVy: 0, spin: 0, curveOffsetX: 0   
+                targetX: 0, targetY: 0, radius: 22, startRadius: 22, targetRadius: 8,
+                progress: 0, speed: 0.035, bounceVx: 0, bounceVy: 0, spin: 0, curveOffsetX: 0,
+                inNet: false, netVx: 0, netVy: 0, woodwork: null
             };
 
             let initialSpeed = 2.0;
@@ -238,7 +274,7 @@
                     let advancedStreakLevel = streak - 10;
                     initialSpeed = 1.6 + (advancedStreakLevel * 0.15); 
                 }
-                initialSpeed = Math.min(initialSpeed, 5.2); 
+                initialSpeed = Math.min(initialSpeed, 4.5);
             } else {
                 initialSpeed = 2.0 + Math.min((currentRound - 1) * 0.3, 2.2);
             }
@@ -246,7 +282,9 @@
             keeper = {
                 x: canvas.width / 2, baselineY: 240, y: 240, w: 54, h: 70,
                 dir: Math.random() < 0.5 ? 1 : -1, speed: initialSpeed,
-                state: 'idling', targetX: canvas.width / 2, targetY: 240
+                state: 'idling', targetX: canvas.width / 2, targetY: 240,
+                vx: 0, vy: 0, angle: 0, diveDir: 0, diveReach: 0,
+                diveStartX: canvas.width / 2, diveStartY: 240
             };
 
             gameState = 'aiming'; swipePoints = []; isTrackingSwipe = false;
@@ -320,20 +358,25 @@
                 if (ball.targetY >= goal.y) ball.targetX = Math.max(goal.x - 35, Math.min(goal.x + goal.w + 35, ball.targetX));
 
                 ball.progress = 0; gameState = 'shooting'; keeper.state = 'diving';
+                keeper.diveStartX = keeper.x;
+                keeper.diveStartY = keeper.y;
 
-                let errorMarginValue = 120; 
-                if (activeGameMode === "1P" && streak < 10) {
-                    errorMarginValue = 220 - (streak * 10); 
-                }
-                let errorMargin = (Math.random() * (errorMarginValue * 2) - errorMarginValue); 
-                keeper.targetX = Math.max(goal.x + 10, Math.min(goal.x + goal.w - 10, ball.targetX + errorMargin));
+                // Keeper dives toward where the ball will actually arrive (no random
+                // fudge) but can only stretch keeperDiveReach() px from where it stood.
+                let aimX = Math.max(goal.x + 6, Math.min(goal.x + goal.w - 6, ball.targetX));
+                let reach = keeperDiveReach();
+                keeper.targetX = keeper.x + Math.max(-reach, Math.min(reach, aimX - keeper.x));
 
                 if (ball.targetY < keeper.baselineY - 40) {
                     let calculatedLift = (keeper.baselineY - ball.targetY) * 0.55;
-                    keeper.targetY = keeper.baselineY - Math.min(calculatedLift, 65);
+                    keeper.targetY = keeper.baselineY - Math.min(calculatedLift, 60);
                 } else {
                     keeper.targetY = keeper.baselineY;
                 }
+
+                // Which way (and how far) the keeper commits — drives the dive lean.
+                keeper.diveReach = keeper.targetX - keeper.x;
+                keeper.diveDir = Math.sign(keeper.diveReach) || (Math.random() < 0.5 ? 1 : -1);
             }
         }
 
@@ -347,6 +390,40 @@
         function update() {
             globalFrameCount++;
             if (crowdCelebrationTimer > 0) crowdCelebrationTimer--;
+
+            // Keeper dive landing: once committed, gravity keeps pulling the keeper
+            // down until it hits the turf and slides to a stop. Runs every frame
+            // (during 'result'/'rebounding' too) so the landing plays out fully.
+            if (keeper && keeper.state === 'landing') {
+                const floorY = keeper.baselineY + 22;
+                keeper.x += keeper.vx;
+                keeper.y += keeper.vy;
+                keeper.vy += 0.62;
+                keeper.angle += (1.5 - keeper.angle) * 0.16;
+                if (keeper.y >= floorY) {
+                    keeper.y = floorY;
+                    keeper.vy = 0;
+                    keeper.vx *= 0.80;
+                    if (Math.abs(keeper.vx) < 0.3) { keeper.vx = 0; keeper.state = 'down'; }
+                } else {
+                    keeper.vx *= 0.99;
+                }
+            }
+
+            // Goal celebration: the ball nestles into the net behind the keeper —
+            // it hits the back of the net and drops to the goal line under gravity.
+            if (ball && ball.inNet && gameState === 'result') {
+                const netFloor = goal.y + goal.h - 10;
+                ball.x += ball.netVx;
+                ball.y += ball.netVy;
+                ball.netVy += 0.5;        // gravity
+                ball.netVx *= 0.94;
+                if (ball.radius < 11) ball.radius += 0.3;
+                if (ball.x < goal.x + 10) { ball.x = goal.x + 10; ball.netVx = Math.abs(ball.netVx) * 0.5; }
+                else if (ball.x > goal.x + goal.w - 10) { ball.x = goal.x + goal.w - 10; ball.netVx = -Math.abs(ball.netVx) * 0.5; }
+                if (ball.y < goal.y + 6) { ball.y = goal.y + 6; ball.netVy = Math.abs(ball.netVy) * 0.4; } // caught by back net
+                if (ball.y >= netFloor) { ball.y = netFloor; ball.netVy = (ball.netVy > 1) ? ball.netVy * -0.4 : 0; ball.netVx *= 0.7; }
+            }
 
             if (gameState === 'aiming') {
                 keeper.x += keeper.speed * keeper.dir;
@@ -368,19 +445,82 @@
                 ball.radius = ball.startRadius + (ball.targetRadius - ball.startRadius) * ball.progress;
 
                 if (keeper.state === 'diving') {
-                    keeper.x += (keeper.targetX - keeper.x) * 0.038; 
-                    keeper.y += (keeper.targetY - keeper.y) * 0.038; 
+                    // Reach the (capped) dive target deterministically by impact, so the
+                    // save outcome depends only on distance — never on timing/ease luck.
+                    let e = Math.min(1, ball.progress * 1.12);
+                    e = e * (2 - e); // easeOut
+                    keeper.x = keeper.diveStartX + (keeper.targetX - keeper.diveStartX) * e;
+                    keeper.y = keeper.diveStartY + (keeper.targetY - keeper.diveStartY) * e;
+                    // Lean toward the ball as the dive develops.
+                    let leanMax = Math.min(1.0, Math.abs(keeper.diveReach) / 85) * 1.3;
+                    keeper.angle = leanMax * Math.min(1, ball.progress * 1.25);
                 }
 
                 if (ball.progress >= 1) {
-                    let hitKeeperWidth = keeper.w / 2 + 5; 
-                    if (ball.x >= keeper.x - hitKeeperWidth && ball.x <= keeper.x + hitKeeperWidth && ball.y >= keeper.y - 45 && ball.y <= keeper.y + 45) {
-                        gameState = 'rebounding'; 
-                        ball.bounceVx = ((ball.x - keeper.x) / hitKeeperWidth) * 5; 
-                        ball.bounceVy = 4.5; 
+                    // Hand the keeper over to gravity so it arcs down and lands
+                    // while the ball plays out. (Save check still uses the reach
+                    // position recorded this frame, so difficulty is unchanged.)
+                    if (keeper.state === 'diving') {
+                        keeper.state = 'landing';
+                        keeper.vx = keeper.diveDir * Math.min(4.5, Math.abs(keeper.diveReach) / 11);
+                        keeper.vy = -1.8;
+                    }
+                    // SAVE DECISION — purely the ball's distance from the keeper's hit
+                    // box. The same rule applies at every difficulty: get the ball far
+                    // enough from the keeper and it goes in, no matter how fast it is.
+                    let hbHalfW = keeper.w / 2;
+                    let ddx = Math.max(Math.abs(ball.x - keeper.x) - hbHalfW, 0);
+                    let ddy = Math.max(Math.abs(ball.y - keeper.y) - KEEPER_HITBOX_HALF_H, 0);
+                    if (Math.hypot(ddx, ddy) <= KEEPER_CATCH_REACH) {
+                        gameState = 'rebounding';
+                        ball.bounceVx = ((ball.x - keeper.x) / (hbHalfW + KEEPER_CATCH_REACH)) * 5;
+                        ball.bounceVy = 4.5;
                         return;
                     }
-                    processResult(ball.x >= goal.x && ball.x <= goal.x + goal.w && ball.y >= goal.y && ball.y <= goal.y + goal.h);
+                    // WOODWORK + GOAL — "over the woodwork" is the fraction of the ball
+                    // outside the goal line. >30% over → rebounds back out (no goal);
+                    // ≤30% → clips the inside and deflects in. Same rule for posts and bar.
+                    let r = ball.radius;
+                    let withinPosts = ball.x >= goal.x && ball.x <= goal.x + goal.w;
+                    let withinBar = ball.y >= goal.y && ball.y <= goal.y + goal.h;
+
+                    // Side posts (along the goal's vertical span).
+                    if (withinBar) {
+                        let leftIn = ball.x - goal.x;             // +inside / -outside
+                        let rightIn = (goal.x + goal.w) - ball.x;
+                        let postIn = (Math.abs(leftIn) < r) ? leftIn : (Math.abs(rightIn) < r ? rightIn : null);
+                        if (postIn !== null) {
+                            SoundFX.playPost(); ball.woodwork = 'post';
+                            if ((r - postIn) / (2 * r) > 0.30 + 1e-9) {
+                                gameState = 'rebounding';
+                                ball.bounceVx = (postIn === leftIn ? -1 : 1) * 3.5; ball.bounceVy = 4.5;
+                                return;
+                            }
+                            goalIntoNet((postIn === leftIn ? 1 : -1) * 1.6, -2.0); // deflects in
+                            return;
+                        }
+                    }
+                    // Crossbar (across the goal's horizontal span).
+                    if (withinPosts) {
+                        let barIn = ball.y - goal.y; // +inside (below bar) / -outside (above)
+                        if (Math.abs(barIn) < r) {
+                            SoundFX.playPost(); ball.woodwork = 'bar';
+                            if ((r - barIn) / (2 * r) > 0.30 + 1e-9) {
+                                gameState = 'rebounding';
+                                ball.bounceVx = ((ball.x - (goal.x + goal.w / 2)) / (goal.w / 2)) * 2.5;
+                                ball.bounceVy = 4.5; // bounces down and out
+                                return;
+                            }
+                            goalIntoNet(0, 2.6); // deflects down into the net
+                            return;
+                        }
+                    }
+                    // Clean strike (inside both posts and below the bar) vs wide/over.
+                    if (withinPosts && withinBar) {
+                        goalIntoNet((ball.x - (goal.x + goal.w / 2)) * 0.02, -2.2);
+                    } else {
+                        processResult(false);
+                    }
                     return;
                 }
             }
@@ -603,6 +743,9 @@
             let shadowY = (gameState === 'rebounding') ? ball.y + 25 : ball.startY + ((goal.y + goal.h + 10) - ball.startY) * ball.progress;
             ctx.ellipse(ball.x, shadowY, ball.radius * 1.1, ball.radius * 0.4, 0, 0, Math.PI * 2); ctx.fill();
 
+            // While the ball is nestling in the net (a scored goal) it sits BEHIND the keeper.
+            if (ball.inNet) drawBall();
+
             // ==========================================
             // GOALKEEPER
             // ==========================================
@@ -612,11 +755,17 @@
             const gkc = defenderNationObj.keeperColor;
             const gkd = defenderNationObj.detailColor;
 
-            // Ground shadow.
+            // Ground shadow (stays flat on the turf even while the body rotates).
             ctx.fillStyle = 'rgba(0,0,0,0.35)';
             ctx.beginPath();
             ctx.ellipse(0, 30 + (keeper.baselineY - keeper.y), keeper.w * 0.6, 8, 0, 0, Math.PI * 2);
             ctx.fill();
+
+            // Dive pose: tilt the whole body toward the ball, pivoting at the hips.
+            const diving = keeper.state !== 'idling';
+            ctx.translate(0, 6);
+            ctx.rotate((keeper.angle || 0) * (keeper.diveDir || 0));
+            ctx.translate(0, -6);
 
             // Boots.
             ctx.fillStyle = '#1a1a1a';
@@ -638,27 +787,42 @@
             applyKitTexture(ctx, -18, -33, 36, 37, defenderNationObj, true, true);
             ctx.restore();
 
-            // Arms (raised, ready) with cuffs.
-            ctx.fillStyle = gkc;
-            roundRectPath(ctx, -30, -32, 12, 17, 5); ctx.fill();
-            roundRectPath(ctx, 18, -32, 12, 17, 5); ctx.fill();
-            ctx.fillStyle = 'rgba(0,0,0,0.18)';
-            roundRectPath(ctx, -30, -32, 4, 17, 4); ctx.fill();
-            roundRectPath(ctx, 26, -32, 4, 17, 4); ctx.fill();
-            ctx.fillStyle = gkd;
-            ctx.fillRect(-30, -18, 12, 2); ctx.fillRect(18, -18, 12, 2);
-
             // Collar.
             ctx.strokeStyle = gkd; ctx.lineWidth = 2.2;
             ctx.beginPath(); ctx.arc(0, -33, 6, 0.18 * Math.PI, 0.82 * Math.PI); ctx.stroke();
 
-            // Padded gloves.
-            ctx.fillStyle = '#ffffff';
-            roundRectPath(ctx, -33, -19, 11, 12, 3); ctx.fill();
-            roundRectPath(ctx, 22, -19, 11, 12, 3); ctx.fill();
-            ctx.strokeStyle = gkd; ctx.lineWidth = 1.5;
-            roundRectPath(ctx, -33, -19, 11, 12, 3); ctx.stroke();
-            roundRectPath(ctx, 22, -19, 11, 12, 3); ctx.stroke();
+            if (!diving) {
+                // Ready stance — arms at the sides with cuffs + gloves.
+                ctx.fillStyle = gkc;
+                roundRectPath(ctx, -30, -32, 12, 17, 5); ctx.fill();
+                roundRectPath(ctx, 18, -32, 12, 17, 5); ctx.fill();
+                ctx.fillStyle = 'rgba(0,0,0,0.18)';
+                roundRectPath(ctx, -30, -32, 4, 17, 4); ctx.fill();
+                roundRectPath(ctx, 26, -32, 4, 17, 4); ctx.fill();
+                ctx.fillStyle = gkd;
+                ctx.fillRect(-30, -18, 12, 2); ctx.fillRect(18, -18, 12, 2);
+                ctx.fillStyle = '#ffffff';
+                roundRectPath(ctx, -33, -19, 11, 12, 3); ctx.fill();
+                roundRectPath(ctx, 22, -19, 11, 12, 3); ctx.fill();
+                ctx.strokeStyle = gkd; ctx.lineWidth = 1.5;
+                roundRectPath(ctx, -33, -19, 11, 12, 3); ctx.stroke();
+                roundRectPath(ctx, 22, -19, 11, 12, 3); ctx.stroke();
+            } else {
+                // Dive pose — both arms stretched overhead, reaching for the ball.
+                ctx.fillStyle = gkc;
+                roundRectPath(ctx, -11, -54, 10, 30, 4); ctx.fill();
+                roundRectPath(ctx, 1, -54, 10, 30, 4); ctx.fill();
+                ctx.fillStyle = 'rgba(0,0,0,0.18)';
+                roundRectPath(ctx, -11, -54, 3.5, 30, 3); ctx.fill();
+                roundRectPath(ctx, 7.5, -54, 3.5, 30, 3); ctx.fill();
+                // Gloves above the head.
+                ctx.fillStyle = '#ffffff';
+                roundRectPath(ctx, -12, -62, 11, 11, 3); ctx.fill();
+                roundRectPath(ctx, 1, -62, 11, 11, 3); ctx.fill();
+                ctx.strokeStyle = gkd; ctx.lineWidth = 1.5;
+                roundRectPath(ctx, -12, -62, 11, 11, 3); ctx.stroke();
+                roundRectPath(ctx, 1, -62, 11, 11, 3); ctx.stroke();
+            }
 
             // Neck, head and hair.
             ctx.fillStyle = '#e3a877'; ctx.fillRect(-3.5, -40, 7, 9);
@@ -671,19 +835,38 @@
 
             ctx.restore();
 
-            // ==========================================
-            // UPGRADED 3D SPINNING BALL TEXTURE GEOMETRY
-            // ==========================================
-            ctx.save(); 
+            // Ball draws in FRONT of the keeper during flight/rebounds, but behind it
+            // once it's nestling in the net (already drawn above when inNet).
+            if (!ball.inNet) drawBall();
+
+            if (gameState === 'result') {
+                let fSize = feedbackText.length > 6 ? 26 : 44;
+                ctx.fillStyle = feedbackColor; ctx.font = `bold ${fSize}px sans-serif`; ctx.textAlign = 'center';
+                ctx.fillText(feedbackText, canvas.width / 2, canvas.height * 0.52);
+            }
+        }
+
+        // 3D spinning ball (also used for the in-net goal celebration).
+        function drawBall() {
+            ctx.save();
             ctx.translate(ball.x, ball.y);
-            
+
             let c = ball.config;
             let r = Math.max(ball.radius, 3);
-            
+
+            if (ball.inNet) {
+                // Soft glow where the ball pushes into the back of the net.
+                let ng = ctx.createRadialGradient(0, 0, r * 0.4, 0, 0, r * 2.3);
+                ng.addColorStop(0, 'rgba(255,255,255,0.20)');
+                ng.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.fillStyle = ng;
+                ctx.beginPath(); ctx.arc(0, 0, r * 2.3, 0, Math.PI * 2); ctx.fill();
+            }
+
             ctx.beginPath();
             ctx.arc(0, 0, r, 0, Math.PI * 2);
             ctx.clip();
-            
+
             let sphereBase = ctx.createRadialGradient(-r * 0.2, -r * 0.2, r * 0.1, 0, 0, r);
             sphereBase.addColorStop(0, c.primary);
             sphereBase.addColorStop(0.8, c.primary);
@@ -802,24 +985,33 @@
             ctx.stroke();
 
             ctx.restore();
-
-            if (gameState === 'result') {
-                ctx.fillStyle = feedbackColor; ctx.font = 'bold 44px sans-serif'; ctx.textAlign = 'center';
-                ctx.fillText(feedbackText, canvas.width / 2, canvas.height * 0.52);
-            }
         }
 
         let feedbackText = ""; let feedbackColor = "#fff";
 
+        // Register a goal that deflected off the woodwork or flew straight in, then let
+        // the ball play out its net-fall (see the celebration block in update()).
+        function goalIntoNet(vx, vy) {
+            ball.inNet = true;
+            ball.netVx = vx;
+            ball.netVy = vy;
+            processResult(true);
+        }
+
         function processResult(isGoal) {
             gameState = 'result';
+            let wood = ball.woodwork; // 'post' | 'bar' | null
+            ball.woodwork = null;
+            let woodName = wood === 'bar' ? 'BAR' : 'POST';
             if (isGoal) {
-                SoundFX.playGoal(); feedbackText = "GOAL!"; feedbackColor = "#4CD964";
+                SoundFX.playGoal();
+                feedbackText = wood ? `IN OFF THE ${woodName}!` : "GOAL!"; feedbackColor = "#4CD964";
                 careerGoals++; localStorage.setItem('wc_career_goals', careerGoals);
                 document.getElementById('careerCounter').innerText = careerGoals;
-                crowdCelebrationTimer = 90; 
+                crowdCelebrationTimer = 90;
             } else {
-                SoundFX.playSave(); feedbackText = "MISS!"; feedbackColor = "#FF3B30";
+                if (!wood) SoundFX.playSave(); // the woodwork "donk" already played
+                feedbackText = wood ? `OFF THE ${woodName}!` : "MISS!"; feedbackColor = "#FF3B30";
             }
 
             if (activeGameMode === "1P") {
