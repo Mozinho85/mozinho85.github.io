@@ -8,13 +8,13 @@
         document.getElementById('careerCounter').innerText = careerGoals;
 
         function changeScreen(targetId) {
-            const screens = ['splashScreen', 'selectorScreen', 'lockerScreen', 'continueScreen', 'gameOverScreen'];
+            const screens = ['splashScreen', 'difficultyScreen', 'selectorScreen', 'lockerScreen', 'continueScreen', 'gameOverScreen', 'submitScoreScreen', 'leaderboardScreen'];
             screens.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.style.display = (id === targetId) ? 'flex' : 'none';
             });
             
-            if (targetId === 'splashScreen' || targetId === 'selectorScreen' || targetId === 'lockerScreen') {
+            if (targetId !== '' && targetId !== 'continueScreen') {
                 document.getElementById('arcadeHUD').style.display = 'none';
                 document.getElementById('p1Board').style.display = 'none';
                 document.getElementById('p2Board').style.display = 'none';
@@ -92,6 +92,15 @@
         let globalFrameCount = 0;
         let crowdCelebrationTimer = 0;
 
+        // 2-player keeper difficulty — sets the patrol base speed (+ per-round climb).
+        // Only patrol speed changes; the dive reach stays capped so it's always beatable.
+        const TWO_P_DIFFICULTY = {
+            Easy:   { base: 1.6, perRound: 0.18, cap: 1.0 },
+            Medium: { base: 2.6, perRound: 0.25, cap: 1.4 },
+            Hard:   { base: 3.8, perRound: 0.30, cap: 1.6 }
+        };
+        let twoPlayerDifficulty = localStorage.getItem('wc_2p_difficulty') || 'Medium';
+
         const grid = document.getElementById('nationGrid');
         const startBtn = document.getElementById('startBtn');
         const selectionTitle = document.getElementById('selectionTitle');
@@ -99,19 +108,39 @@
         function selectGameMode(mode) {
             activeGameMode = mode;
             SoundFX.startMusic();
+
+            if (mode === "2P") {
+                // 2P picks keeper difficulty first, then teams.
+                highlightDifficulty();
+                changeScreen('difficultyScreen');
+                return;
+            }
+
             changeScreen('selectorScreen');
             setupPhase = 1; selectedNationTmp = null;
             startBtn.disabled = true;
-
-            if (activeGameMode === "1P") {
-                selectionTitle.innerText = "CHOOSE YOUR TEAM";
-                selectionTitle.style.color = "#f7b500";
-                adSavesRemaining = 3; 
-            } else {
-                selectionTitle.innerText = "PLAYER 1 CHOOSE";
-                selectionTitle.style.color = "#f7b500";
-            }
+            selectionTitle.innerText = "CHOOSE YOUR TEAM";
+            selectionTitle.style.color = "#f7b500";
+            adSavesRemaining = 3;
             buildSelectionGrid();
+        }
+
+        function setTwoPlayerDifficulty(level) {
+            twoPlayerDifficulty = level;
+            localStorage.setItem('wc_2p_difficulty', level);
+            changeScreen('selectorScreen');
+            setupPhase = 1; selectedNationTmp = null;
+            startBtn.disabled = true;
+            selectionTitle.innerText = "PLAYER 1 CHOOSE";
+            selectionTitle.style.color = "#f7b500";
+            buildSelectionGrid();
+        }
+
+        // Highlight the currently-selected difficulty button.
+        function highlightDifficulty() {
+            document.querySelectorAll('#difficultyScreen .menu-btn').forEach(b => {
+                b.classList.toggle('selected', b.dataset.level === twoPlayerDifficulty);
+            });
         }
 
         // Crisp inline-SVG national flags (3:2). preserveAspectRatio="none" fills
@@ -268,15 +297,22 @@
             ball.config = currentActiveBallConfig;
 
             if (activeGameMode === "1P") {
+                // Brisk early ramp up to ~4.5 by streak 30, then a gentle, never-ending
+                // climb (+0.012/shot) so the keeper keeps getting faster past 100 shots.
+                // It stays beatable at any speed because the dive REACH is capped
+                // (see keeperDiveReach) — only the patrol speed grows.
                 if (streak < 10) {
-                    initialSpeed = 1.0 + (streak * 0.06); 
+                    initialSpeed = 1.0 + (streak * 0.06);          // 1.00 → 1.54
+                } else if (streak <= 30) {
+                    initialSpeed = 1.6 + (streak - 10) * 0.145;    // 1.60 → 4.50 at streak 30
                 } else {
-                    let advancedStreakLevel = streak - 10;
-                    initialSpeed = 1.6 + (advancedStreakLevel * 0.15); 
+                    initialSpeed = 4.5 + (streak - 30) * 0.012;    // very slight, uncapped
                 }
-                initialSpeed = Math.min(initialSpeed, 4.5);
             } else {
-                initialSpeed = 2.0 + Math.min((currentRound - 1) * 0.3, 2.2);
+                // 2P: base patrol speed from the chosen difficulty, with a small
+                // per-round climb. (Dive reach stays capped — see keeperDiveReach.)
+                const d = TWO_P_DIFFICULTY[twoPlayerDifficulty] || TWO_P_DIFFICULTY.Medium;
+                initialSpeed = d.base + Math.min((currentRound - 1) * d.perRound, d.cap);
             }
 
             keeper = {
@@ -284,7 +320,8 @@
                 dir: Math.random() < 0.5 ? 1 : -1, speed: initialSpeed,
                 state: 'idling', targetX: canvas.width / 2, targetY: 240,
                 vx: 0, vy: 0, angle: 0, diveDir: 0, diveReach: 0,
-                diveStartX: canvas.width / 2, diveStartY: 240
+                diveStartX: canvas.width / 2, diveStartY: 240,
+                scale: 1, madeSave: false, celebPhase: 0
             };
 
             gameState = 'aiming'; swipePoints = []; isTrackingSwipe = false;
@@ -391,6 +428,8 @@
             globalFrameCount++;
             if (crowdCelebrationTimer > 0) crowdCelebrationTimer--;
 
+            if (gameState === 'trophy') { updateTrophyCelebration(); return; }
+
             // Keeper dive landing: once committed, gravity keeps pulling the keeper
             // down until it hits the turf and slides to a stop. Runs every frame
             // (during 'result'/'rebounding' too) so the landing plays out fully.
@@ -404,10 +443,23 @@
                     keeper.y = floorY;
                     keeper.vy = 0;
                     keeper.vx *= 0.80;
-                    if (Math.abs(keeper.vx) < 0.3) { keeper.vx = 0; keeper.state = 'down'; }
+                    if (Math.abs(keeper.vx) < 0.3) {
+                        keeper.vx = 0;
+                        keeper.state = keeper.madeSave ? 'celebrating' : 'down';
+                    }
                 } else {
                     keeper.vx *= 0.99;
                 }
+            }
+
+            // Save celebration: the keeper springs up and runs toward the camera with
+            // arms aloft, getting bigger as it comes "closer" to the front of the pitch.
+            if (keeper && keeper.state === 'celebrating') {
+                keeper.angle *= 0.78;                                        // straighten up out of the dive
+                keeper.y += 3.2;                                             // run toward the front
+                keeper.scale = Math.min((keeper.scale || 1) + 0.012, 2.0);   // perspective: grow as it nears
+                keeper.x += (canvas.width / 2 - keeper.x) * 0.03;            // drift toward centre
+                keeper.celebPhase = (keeper.celebPhase || 0) + 0.45;         // running cadence
             }
 
             // Goal celebration: the ball nestles into the net behind the keeper —
@@ -473,6 +525,7 @@
                     let ddy = Math.max(Math.abs(ball.y - keeper.y) - KEEPER_HITBOX_HALF_H, 0);
                     if (Math.hypot(ddx, ddy) <= KEEPER_CATCH_REACH) {
                         gameState = 'rebounding';
+                        keeper.madeSave = true; // → triggers the celebration run after landing
                         ball.bounceVx = ((ball.x - keeper.x) / (hbHalfW + KEEPER_CATCH_REACH)) * 5;
                         ball.bounceVy = 4.5;
                         return;
@@ -754,27 +807,53 @@
 
             const gkc = defenderNationObj.keeperColor;
             const gkd = defenderNationObj.detailColor;
+            const celebrating = keeper.state === 'celebrating';
+            const diving = !celebrating && keeper.state !== 'idling';
 
-            // Ground shadow (stays flat on the turf even while the body rotates).
+            // Perspective scale — grows as the keeper runs toward the camera celebrating.
+            const sc = keeper.scale || 1;
+            ctx.scale(sc, sc);
+
+            // Ground shadow.
             ctx.fillStyle = 'rgba(0,0,0,0.35)';
             ctx.beginPath();
-            ctx.ellipse(0, 30 + (keeper.baselineY - keeper.y), keeper.w * 0.6, 8, 0, 0, Math.PI * 2);
+            const gkShadowY = celebrating ? 33 : (30 + (keeper.baselineY - keeper.y));
+            ctx.ellipse(0, gkShadowY, keeper.w * 0.6, 8, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Dive pose: tilt the whole body toward the ball, pivoting at the hips.
-            const diving = keeper.state !== 'idling';
+            // Body lean (dive only — the celebration straightens up).
             ctx.translate(0, 6);
             ctx.rotate((keeper.angle || 0) * (keeper.diveDir || 0));
             ctx.translate(0, -6);
 
-            // Boots.
-            ctx.fillStyle = '#1a1a1a';
-            roundRectPath(ctx, -14, 27, 12, 5, 2); ctx.fill();
-            roundRectPath(ctx, 2, 27, 12, 5, 2); ctx.fill();
-            // Socks.
-            ctx.fillStyle = '#f2f2f2';
-            ctx.fillRect(-13, 14, 9, 14); ctx.fillRect(4, 14, 9, 14);
-            ctx.fillStyle = gkd; ctx.fillRect(-13, 16, 9, 2); ctx.fillRect(4, 16, 9, 2);
+            // --- Legs (animated): a walking shuffle while patrolling, spread/extended
+            // during a dive. Drawn as limbs so they can move; shorts cover the hips. ---
+            let hipY = 11, footLx, footLy, footRx, footRy;
+            if (keeper.state === 'idling') {
+                const wp = keeper.x * 0.16;                          // cadence tied to actual movement
+                const sL = Math.sin(wp), sR = Math.sin(wp + Math.PI);
+                footLx = -6 + sL * 2; footLy = 30 - Math.max(0, sL) * 5; // alternate foot lifts
+                footRx = 6 + sR * 2;  footRy = 30 - Math.max(0, sR) * 5;
+            } else if (celebrating) {
+                const cp = keeper.celebPhase || 0;                   // fast, high-knee running
+                const sL = Math.sin(cp), sR = Math.sin(cp + Math.PI);
+                footLx = -6 + sL * 5; footLy = 30 - Math.max(0, sL) * 9;
+                footRx = 6 + sR * 5;  footRy = 30 - Math.max(0, sR) * 9;
+            } else {
+                const ext = Math.min(1, (keeper.angle || 0) / 1.2);  // splay out as the dive commits
+                footLx = -6 - ext * 9; footLy = 30 - ext * 5;
+                footRx = 6 + ext * 9;  footRy = 30 - ext * 5;
+            }
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#f2f2f2'; ctx.lineWidth = 8;          // socks
+            ctx.beginPath(); ctx.moveTo(-6, hipY); ctx.lineTo(footLx, footLy); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(6, hipY); ctx.lineTo(footRx, footRy); ctx.stroke();
+            ctx.strokeStyle = gkd; ctx.lineWidth = 8;                // sock trim band
+            ctx.beginPath(); ctx.moveTo(-6 + (footLx + 6) * 0.18, hipY + (footLy - hipY) * 0.18); ctx.lineTo(-6 + (footLx + 6) * 0.30, hipY + (footLy - hipY) * 0.30); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(6 + (footRx - 6) * 0.18, hipY + (footRy - hipY) * 0.18); ctx.lineTo(6 + (footRx - 6) * 0.30, hipY + (footRy - hipY) * 0.30); ctx.stroke();
+            ctx.fillStyle = '#1a1a1a';                               // boots
+            roundRectPath(ctx, footLx - 6, footLy - 2, 12, 5, 2); ctx.fill();
+            roundRectPath(ctx, footRx - 6, footRy - 2, 12, 5, 2); ctx.fill();
             // Shorts.
             ctx.fillStyle = '#15171a';
             roundRectPath(ctx, -16, 2, 32, 16, 4); ctx.fill();
@@ -791,38 +870,36 @@
             ctx.strokeStyle = gkd; ctx.lineWidth = 2.2;
             ctx.beginPath(); ctx.arc(0, -33, 6, 0.18 * Math.PI, 0.82 * Math.PI); ctx.stroke();
 
-            if (!diving) {
-                // Ready stance — arms at the sides with cuffs + gloves.
-                ctx.fillStyle = gkc;
-                roundRectPath(ctx, -30, -32, 12, 17, 5); ctx.fill();
-                roundRectPath(ctx, 18, -32, 12, 17, 5); ctx.fill();
-                ctx.fillStyle = 'rgba(0,0,0,0.18)';
-                roundRectPath(ctx, -30, -32, 4, 17, 4); ctx.fill();
-                roundRectPath(ctx, 26, -32, 4, 17, 4); ctx.fill();
-                ctx.fillStyle = gkd;
-                ctx.fillRect(-30, -18, 12, 2); ctx.fillRect(18, -18, 12, 2);
-                ctx.fillStyle = '#ffffff';
-                roundRectPath(ctx, -33, -19, 11, 12, 3); ctx.fill();
-                roundRectPath(ctx, 22, -19, 11, 12, 3); ctx.fill();
-                ctx.strokeStyle = gkd; ctx.lineWidth = 1.5;
-                roundRectPath(ctx, -33, -19, 11, 12, 3); ctx.stroke();
-                roundRectPath(ctx, 22, -19, 11, 12, 3); ctx.stroke();
+            // Arms drawn as limbs rooted at the shoulders (thick rounded strokes), so
+            // they clearly attach to the body. Standing: relaxed at the sides.
+            // Diving: both raised toward the ball (the whole body is rotated to face it).
+            const shL = -15, shR = 15, shY = -26; // shoulder joints (inside the torso top)
+            let hand;
+            if (celebrating) {
+                // Arms aloft, pumping as the keeper runs to celebrate.
+                const cp = keeper.celebPhase || 0;
+                hand = { lx: -19, ly: -52 + Math.sin(cp) * 4, rx: 19, ry: -52 + Math.sin(cp + Math.PI) * 4 };
+            } else if (diving) {
+                // Arms extend further overhead as the dive develops — a reaching stretch.
+                const ext = Math.min(1, (keeper.angle || 0) / 1.2);
+                hand = { lx: -16 - ext * 5, ly: -46 - ext * 13, rx: 16 + ext * 5, ry: -46 - ext * 13 };
             } else {
-                // Dive pose — both arms stretched overhead, reaching for the ball.
-                ctx.fillStyle = gkc;
-                roundRectPath(ctx, -11, -54, 10, 30, 4); ctx.fill();
-                roundRectPath(ctx, 1, -54, 10, 30, 4); ctx.fill();
-                ctx.fillStyle = 'rgba(0,0,0,0.18)';
-                roundRectPath(ctx, -11, -54, 3.5, 30, 3); ctx.fill();
-                roundRectPath(ctx, 7.5, -54, 3.5, 30, 3); ctx.fill();
-                // Gloves above the head.
-                ctx.fillStyle = '#ffffff';
-                roundRectPath(ctx, -12, -62, 11, 11, 3); ctx.fill();
-                roundRectPath(ctx, 1, -62, 11, 11, 3); ctx.fill();
-                ctx.strokeStyle = gkd; ctx.lineWidth = 1.5;
-                roundRectPath(ctx, -12, -62, 11, 11, 3); ctx.stroke();
-                roundRectPath(ctx, 1, -62, 11, 11, 3); ctx.stroke();
+                hand = { lx: -27, ly: -7, rx: 27, ry: -7 }; // relaxed at the sides
             }
+            ctx.lineCap = 'round';
+            // Sleeves.
+            ctx.strokeStyle = gkc; ctx.lineWidth = 9;
+            ctx.beginPath(); ctx.moveTo(shL, shY); ctx.lineTo(hand.lx, hand.ly); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(shR, shY); ctx.lineTo(hand.rx, hand.ry); ctx.stroke();
+            // Cuffs near the wrists (detail colour band).
+            ctx.strokeStyle = gkd; ctx.lineWidth = 9;
+            ctx.beginPath(); ctx.moveTo(shL + (hand.lx - shL) * 0.80, shY + (hand.ly - shY) * 0.80); ctx.lineTo(shL + (hand.lx - shL) * 0.93, shY + (hand.ly - shY) * 0.93); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(shR + (hand.rx - shR) * 0.80, shY + (hand.ry - shY) * 0.80); ctx.lineTo(shR + (hand.rx - shR) * 0.93, shY + (hand.ry - shY) * 0.93); ctx.stroke();
+            // Gloves at the hands.
+            [[hand.lx, hand.ly], [hand.rx, hand.ry]].forEach(([hx, hy]) => {
+                ctx.fillStyle = '#ffffff'; roundRectPath(ctx, hx - 5.5, hy - 5.5, 11, 11, 3); ctx.fill();
+                ctx.strokeStyle = gkd; ctx.lineWidth = 1.5; roundRectPath(ctx, hx - 5.5, hy - 5.5, 11, 11, 3); ctx.stroke();
+            });
 
             // Neck, head and hair.
             ctx.fillStyle = '#e3a877'; ctx.fillRect(-3.5, -40, 7, 9);
@@ -844,6 +921,8 @@
                 ctx.fillStyle = feedbackColor; ctx.font = `bold ${fSize}px sans-serif`; ctx.textAlign = 'center';
                 ctx.fillText(feedbackText, canvas.width / 2, canvas.height * 0.52);
             }
+
+            if (gameState === 'trophy') drawTrophyCelebration();
         }
 
         // 3D spinning ball (also used for the in-net goal celebration).
@@ -1021,7 +1100,6 @@
                         highStreak = streak; localStorage.setItem('wc_high_streak', highStreak);
                     }
                     document.getElementById('uiScore').innerText = score;
-                    document.getElementById('uiStreak').innerText = streak;
 
                     if (streak % 10 === 0 && streak > 0) {
                         adSavesRemaining++;
@@ -1105,10 +1183,7 @@
         function triggerImmediateGameOver() {
             SoundFX.stopMusic();
             gameState = 'over';
-            document.getElementById('winStatusText').innerText = "OUT OF THE CUP!";
-            document.getElementById('winStatusText').style.color = "#FF3B30";
-            document.getElementById('finalScoreText').innerText = `You finished with a streak score of ${streak} for ${player1Nation ? player1Nation.name : 'your team'}.`;
-            changeScreen('gameOverScreen');
+            openScoreSubmit(score, player1Nation); // 1P → enter name / submit to the leaderboard
         }
 
         function syncScoreboardDots() {
@@ -1164,8 +1239,7 @@
                 document.getElementById('arcadeHUD').style.display = "flex";
                 document.getElementById('uiTeam').innerText = player1Nation.tag;
                 score = 0; streak = 0;
-                document.getElementById('uiScore').innerText = score; 
-                document.getElementById('uiStreak').innerText = streak;
+                document.getElementById('uiScore').innerText = score;
             } else {
                 document.getElementById('arcadeHUD').style.display = "none";
                 document.getElementById('turnIndicator').style.display = "block";
@@ -1182,12 +1256,154 @@
 
         function endGame2P(winner) {
             SoundFX.stopMusic();
-            gameState = 'over'; 
+            startTrophyCelebration(winner); // 2P only → trophy parade, then the results screen
+        }
+
+        // ========================================================================
+        // 2-PLAYER WIN CELEBRATION — five outfield players run in with a trophy.
+        // Random variations: lift, a cartwheel, a fumbled (dropped) trophy, a conga.
+        // ========================================================================
+        let trophyCeleb = null;
+        const TROPHY_VARIATIONS = ['lift', 'cartwheel', 'drop', 'conga'];
+
+        function startTrophyCelebration(winner) {
+            const nation = (winner === 1) ? player1Nation : player2Nation;
+            const variation = TROPHY_VARIATIONS[Math.floor(Math.random() * TROPHY_VARIATIONS.length)];
+            const cw = canvas.width, ch = canvas.height, gatherY = ch * 0.66;
+            const players = [];
+            for (let i = 0; i < 5; i++) {
+                const tx = cw * 0.5 + (i - 2) * (cw * 0.17);
+                players.push({
+                    x: cw * 0.5 + (i - 2) * 30, y: ch + 50 + i * 26, // start below screen, staggered
+                    tx, ty: gatherY + (i % 2 ? 16 : 0), delay: i * 7,
+                    phase: Math.random() * 6, sc: 0.92 + (i % 2) * 0.08, jump: 0, cart: 0
+                });
+            }
+            const confetti = [];
+            for (let i = 0; i < 40; i++) confetti.push({
+                x: Math.random() * cw, y: Math.random() * ch - ch, vy: 1 + Math.random() * 2.4,
+                col: ['#f7b500', '#ffffff', '#4CD964', '#5ac8fa', '#FF3B30'][i % 5],
+                r: 2 + Math.random() * 2.5, sw: Math.random() * Math.PI * 2
+            });
+            trophyCeleb = {
+                winner, nation, variation, t: 0, duration: 300,
+                players, confetti, holderIndex: 2, cartIndex: 1,
+                trophy: { x: cw * 0.5, y: gatherY - 72, vx: 0, vy: 0, rot: 0, held: true }
+            };
+            SoundFX.playGoal();
+            gameState = 'trophy';
+        }
+
+        function updateTrophyCelebration() {
+            const c = trophyCeleb; if (!c) return;
+            c.t++;
+            const cw = canvas.width;
+            c.players.forEach((p, i) => {
+                if (c.t < p.delay) return;
+                if (c.variation === 'conga') {                       // snake across in a line
+                    p.ty = canvas.height * 0.6 + Math.sin(c.t * 0.06 + i) * 16;
+                    p.tx = (c.t * 3 - i * 34) % (cw + 120) - 60;
+                    p.x = p.tx; p.y += (p.ty - p.y) * 0.1; p.phase += 0.5; return;
+                }
+                p.x += (p.tx - p.x) * 0.07; p.y += (p.ty - p.y) * 0.07;
+                const arrived = Math.abs(p.y - p.ty) < 5 && Math.abs(p.x - p.tx) < 5;
+                p.phase += arrived ? 0.18 : 0.45;
+                p.jump = arrived ? Math.abs(Math.sin(c.t * 0.16 + i * 1.3)) * 9 : 0;
+                if (c.variation === 'cartwheel' && i === c.cartIndex && arrived) {
+                    p.cart += 0.24; p.x = p.tx + Math.sin(p.cart * 0.5) * 70;
+                    p.jump = Math.abs(Math.sin(p.cart * 0.5)) * 10;
+                }
+            });
+            const tr = c.trophy;
+            if (c.variation === 'drop') {
+                if (c.t > 130 && tr.held) { tr.held = false; tr.vy = -4; tr.vx = 1.6; } // fumble!
+                if (!tr.held) {
+                    tr.x += tr.vx; tr.y += tr.vy; tr.vy += 0.45; tr.rot += 0.22;
+                    const floor = c.players[c.holderIndex].ty + 26;
+                    if (tr.y >= floor) { tr.y = floor; tr.vy *= -0.45; tr.vx *= 0.6; if (Math.abs(tr.vy) < 1) tr.vy = 0; }
+                }
+            } else {
+                const h = c.players[c.holderIndex];
+                tr.x = h.x; tr.y = (h.ty - (h.jump || 0)) - 58 - Math.abs(Math.sin(c.t * 0.1)) * 6;
+                tr.rot = Math.sin(c.t * 0.08) * 0.08;
+            }
+            c.confetti.forEach(f => { f.y += f.vy; f.x += Math.sin(c.t * 0.05 + f.sw) * 0.8; if (f.y > canvas.height) { f.y = -8; f.x = Math.random() * cw; } });
+            if (c.t >= c.duration) finishTrophyCelebration();
+        }
+
+        function finishTrophyCelebration() {
+            const winner = trophyCeleb ? trophyCeleb.winner : 1;
+            trophyCeleb = null;
+            gameState = 'over';
             let winnerName = (winner === 1) ? player1Nation.name : player2Nation.name;
             document.getElementById('winStatusText').innerText = `${winnerName.toUpperCase()} WINS!`;
             document.getElementById('winStatusText').style.color = (winner === 1) ? "#f7b500" : "#5ac8fa";
-            document.getElementById('finalScoreText').innerText = `Scoreline: ${p1History.filter(r=>r==='goal').length} - ${p2History.filter(r=>r==='goal').length}`;
+            document.getElementById('finalScoreText').innerText = `Scoreline: ${p1History.filter(r => r === 'goal').length} - ${p2History.filter(r => r === 'goal').length}`;
             changeScreen('gameOverScreen');
+        }
+
+        function drawTrophy(cx, cy, sc, rot) {
+            ctx.save(); ctx.translate(cx, cy); ctx.scale(sc, sc); if (rot) ctx.rotate(rot);
+            ctx.strokeStyle = '#e0b400'; ctx.lineWidth = 3.5; ctx.lineCap = 'round';
+            ctx.beginPath(); ctx.arc(-14, -14, 7, Math.PI * 0.55, Math.PI * 1.45, true); ctx.stroke();
+            ctx.beginPath(); ctx.arc(14, -14, 7, Math.PI * 0.45, Math.PI * 1.55); ctx.stroke();
+            const g = ctx.createLinearGradient(-13, 0, 13, 0);
+            g.addColorStop(0, '#a9760a'); g.addColorStop(0.5, '#ffe680'); g.addColorStop(1, '#a9760a');
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.moveTo(-13, -22); ctx.lineTo(13, -22);
+            ctx.quadraticCurveTo(11, -3, 0, 1); ctx.quadraticCurveTo(-11, -3, -13, -22); ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#d4a017'; ctx.fillRect(-3, 1, 6, 8);
+            ctx.fillStyle = '#8a6400'; roundRectPath(ctx, -10, 9, 20, 5, 2); ctx.fill(); roundRectPath(ctx, -7, 13, 14, 4, 2); ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,0.55)'; ctx.beginPath(); ctx.ellipse(-5, -13, 2.4, 6, -0.3, 0, Math.PI * 2); ctx.fill();
+            ctx.restore();
+        }
+
+        function drawOutfieldPlayer(cx, cy, sc, nation, o) {
+            ctx.save(); ctx.translate(cx, cy); ctx.scale(sc, sc);
+            if (o.cart) ctx.rotate(o.cart);
+            if (!o.cart) { ctx.fillStyle = 'rgba(0,0,0,0.28)'; ctx.beginPath(); ctx.ellipse(0, 30, 14, 4.5, 0, 0, Math.PI * 2); ctx.fill(); }
+            const ph = o.phase || 0, sL = Math.sin(ph), sR = Math.sin(ph + Math.PI);
+            const fLx = -4 + sL * 4, fLy = 28 - Math.max(0, sL) * 6, fRx = 4 + sR * 4, fRy = 28 - Math.max(0, sR) * 6;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#e8b07a'; ctx.lineWidth = 5.5;
+            ctx.beginPath(); ctx.moveTo(-4, 12); ctx.lineTo(fLx, fLy - 4); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(4, 12); ctx.lineTo(fRx, fRy - 4); ctx.stroke();
+            ctx.strokeStyle = nation.stripeColor || '#1b1b1b'; ctx.lineWidth = 5.5;
+            ctx.beginPath(); ctx.moveTo(fLx, fLy - 5); ctx.lineTo(fLx, fLy - 1); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(fRx, fRy - 5); ctx.lineTo(fRx, fRy - 1); ctx.stroke();
+            ctx.fillStyle = '#1a1a1a';
+            roundRectPath(ctx, fLx - 4.5, fLy - 1, 9, 4, 2); ctx.fill(); roundRectPath(ctx, fRx - 4.5, fRy - 1, 9, 4, 2); ctx.fill();
+            ctx.fillStyle = nation.detailColor || '#14223f'; roundRectPath(ctx, -10, 6, 20, 11, 3); ctx.fill();
+            ctx.save(); roundRectPath(ctx, -11, -15, 22, 23, 5); ctx.clip();
+            applyKitTexture(ctx, -11, -15, 22, 23, nation, false, true); ctx.restore();
+            ctx.strokeStyle = nation.color; ctx.lineWidth = 5; let hands;
+            if (o.holdTrophy) { ctx.beginPath(); ctx.moveTo(-9, -11); ctx.lineTo(-5, -30); ctx.stroke(); ctx.beginPath(); ctx.moveTo(9, -11); ctx.lineTo(5, -30); ctx.stroke(); hands = [[-5, -30], [5, -30]]; }
+            else if (o.celebrate) { ctx.beginPath(); ctx.moveTo(-9, -11); ctx.lineTo(-15, -27); ctx.stroke(); ctx.beginPath(); ctx.moveTo(9, -11); ctx.lineTo(15, -27); ctx.stroke(); hands = [[-15, -27], [15, -27]]; }
+            else { ctx.beginPath(); ctx.moveTo(-9, -11); ctx.lineTo(-13 - sL * 3, -1); ctx.stroke(); ctx.beginPath(); ctx.moveTo(9, -11); ctx.lineTo(13 - sR * 3, -1); ctx.stroke(); hands = [[-13 - sL * 3, -1], [13 - sR * 3, -1]]; }
+            ctx.fillStyle = '#f1c79b'; hands.forEach(([hx, hy]) => { ctx.beginPath(); ctx.arc(hx, hy, 2.6, 0, Math.PI * 2); ctx.fill(); });
+            ctx.fillStyle = '#ffcd9b'; ctx.beginPath(); ctx.arc(0, -23, 7, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#2a1a0e'; ctx.beginPath(); ctx.arc(0, -25, 7, Math.PI * 0.92, Math.PI * 2.08); ctx.fill();
+            ctx.restore();
+        }
+
+        function drawTrophyCelebration() {
+            const c = trophyCeleb; if (!c) return;
+            const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            bg.addColorStop(0, '#0a230c'); bg.addColorStop(0.5, '#123b16'); bg.addColorStop(1, '#1e5e25');
+            ctx.fillStyle = bg; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            c.confetti.forEach(f => { ctx.fillStyle = f.col; ctx.fillRect(f.x, f.y, f.r, f.r * 1.6); });
+            const order = c.players.map((p, i) => ({ p, i })).sort((a, b) => a.p.y - b.p.y);
+            order.forEach(({ p, i }) => {
+                const isCart = c.variation === 'cartwheel' && i === c.cartIndex;
+                const holding = c.variation !== 'drop' && i === c.holderIndex;
+                const arrived = c.variation === 'conga' || Math.abs(p.y - p.ty) < 8;
+                drawOutfieldPlayer(p.x, p.y - p.jump, p.sc, c.nation, { phase: p.phase, cart: isCart ? p.cart : 0, celebrate: arrived && !holding, holdTrophy: holding });
+            });
+            drawTrophy(c.trophy.x, c.trophy.y, (c.variation === 'drop' && !c.trophy.held) ? 1.0 : 1.1, c.trophy.rot);
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#f7b500'; ctx.font = 'bold 30px sans-serif'; ctx.fillText('CHAMPIONS!', canvas.width / 2, 78);
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 18px sans-serif'; ctx.fillText(c.nation.name.toUpperCase(), canvas.width / 2, 104);
+            ctx.textAlign = 'left';
         }
 
         function gameLoop() {
@@ -1198,3 +1414,121 @@
         function resetToMainMenu() {
             changeScreen('splashScreen');
         }
+
+        // ========================================================================
+        // ONLINE HIGH-SCORE BOARD (Supabase REST). Single-player only.
+        // The publishable key is safe to expose; Row-Level Security on the server
+        // limits the public to SELECT + INSERT on the Scores table.
+        // ========================================================================
+        const SUPABASE_URL = 'https://yfmhbtmtyjmjnnbzxbmg.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable__Xco2Xn8sD5hombOAdwJpQ_6NNF_llP';
+        const SCORES_TABLE = 'Scores';
+        const SB_HEADERS = { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY };
+
+        let pendingScore = 0, pendingNation = null;
+
+        async function sbSubmitScore(name, score, team) {
+            const res = await fetch(`${SUPABASE_URL}/rest/v1/${SCORES_TABLE}`, {
+                method: 'POST',
+                headers: { ...SB_HEADERS, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+                body: JSON.stringify({ name, score, team })
+            });
+            if (!res.ok) throw new Error('submit failed: ' + res.status);
+        }
+
+        async function sbFetchTop(limit = 1000, team = '') {
+            let url = `${SUPABASE_URL}/rest/v1/${SCORES_TABLE}?select=name,score,team,created_at&order=score.desc,created_at.asc&limit=${limit}`;
+            if (team) url += `&team=eq.${encodeURIComponent(team)}`;
+            const res = await fetch(url, { headers: SB_HEADERS });
+            if (!res.ok) throw new Error('fetch failed: ' + res.status);
+            return res.json();
+        }
+
+        // Real-world rank = number of scores strictly greater + 1 (works beyond top 1000).
+        async function sbGetRank(score) {
+            const url = `${SUPABASE_URL}/rest/v1/${SCORES_TABLE}?select=score&score=gt.${score}`;
+            const res = await fetch(url, { headers: { ...SB_HEADERS, 'Prefer': 'count=exact', 'Range': '0-0' } });
+            const cr = res.headers.get('content-range') || '*/0';
+            const total = parseInt(cr.split('/')[1]) || 0;
+            return total + 1;
+        }
+
+        // --- Score submission flow (after a 1P run) ---
+        function openScoreSubmit(finalScore, nation) {
+            pendingScore = finalScore; pendingNation = nation;
+            document.getElementById('submitScoreText').innerText =
+                `You scored ${finalScore} for ${nation ? nation.name : 'your team'}`;
+            const input = document.getElementById('nameInput');
+            input.value = localStorage.getItem('wc_player_name') || '';
+            document.getElementById('submitMsg').innerText = '';
+            const btn = document.getElementById('submitScoreBtn');
+            btn.disabled = false; btn.style.opacity = '1';
+            changeScreen('submitScoreScreen');
+        }
+
+        async function submitHighScore() {
+            const input = document.getElementById('nameInput');
+            const name = (input.value || '').trim().toUpperCase().slice(0, 8);
+            if (!name) { document.getElementById('submitMsg').innerText = 'Enter a name first.'; return; }
+            localStorage.setItem('wc_player_name', name);
+            const btn = document.getElementById('submitScoreBtn');
+            btn.disabled = true; btn.style.opacity = '0.5';
+            document.getElementById('submitMsg').innerText = 'Submitting…';
+            try {
+                await sbSubmitScore(name, pendingScore, pendingNation ? pendingNation.tag : '');
+                const rank = await sbGetRank(pendingScore);
+                openLeaderboard({ highlightName: name, highlightScore: pendingScore, myRank: rank });
+            } catch (e) {
+                document.getElementById('submitMsg').innerText = 'Could not submit (offline?). Tap Skip.';
+                btn.disabled = false; btn.style.opacity = '1';
+            }
+        }
+
+        function skipSubmit() { openLeaderboard({}); }
+
+        // --- Leaderboard rendering ---
+        async function openLeaderboard(opts) {
+            opts = opts || {};
+            changeScreen('leaderboardScreen');
+            const list = document.getElementById('leaderboardList');
+            const banner = document.getElementById('lbRankBanner');
+            banner.style.display = opts.myRank ? 'block' : 'none';
+            if (opts.myRank) banner.innerHTML = `Your position: <span style="color:#f7b500;">#${opts.myRank}</span> — ${opts.highlightScore}`;
+            list.innerHTML = '<div style="padding:20px;color:#aaa;">Loading…</div>';
+            try {
+                const rows = await sbFetchTop(1000);
+                renderLeaderboard(rows, opts);
+            } catch (e) {
+                list.innerHTML = '<div style="padding:20px;color:#FF3B30;">Could not load scores (offline?).</div>';
+            }
+        }
+
+        function renderLeaderboard(rows, opts) {
+            const list = document.getElementById('leaderboardList');
+            if (!rows.length) { list.innerHTML = '<div style="padding:20px;color:#aaa;">No scores yet — be the first!</div>'; return; }
+            let highlightedOnce = false;
+            let html = '';
+            rows.forEach((r, i) => {
+                const rank = i + 1;
+                const isMe = !highlightedOnce && opts.highlightName &&
+                    r.name === opts.highlightName && r.score === opts.highlightScore;
+                if (isMe) highlightedOnce = true;
+                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank;
+                html += `<div class="lb-row${isMe ? ' lb-me' : ''}">
+                    <span class="lb-rank">${medal}</span>
+                    <span class="lb-flag">${flagSVG(r.team || '')}</span>
+                    <span class="lb-name">${escapeHtml(r.name)}</span>
+                    <span class="lb-score">${r.score}</span>
+                </div>`;
+            });
+            list.innerHTML = html;
+            const me = list.querySelector('.lb-me');
+            if (me) me.scrollIntoView({ block: 'center' });
+        }
+
+        function escapeHtml(s) {
+            return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+        }
+
+        function openLeaderboardFromMenu() { openLeaderboard({}); }
+        function closeLeaderboard() { changeScreen('splashScreen'); }

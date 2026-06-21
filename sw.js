@@ -1,11 +1,15 @@
-const CACHE_NAME = 'penalty-cup-v10';
+// Bump BUILD on every deploy and keep the ?v= query in index.html / game.html
+// in sync with it. The versioned JS URLs change each build, so browsers always
+// fetch fresh code instead of serving a stale cached copy.
+const BUILD = '16';
+const CACHE_NAME = 'penalty-cup-v' + BUILD;
 const ASSETS = [
   './',
   './index.html',
   './game.html',
-  './app.js',
-  './data.js',
-  './game.js',
+  './app.js?v=' + BUILD,
+  './data.js?v=' + BUILD,
+  './game.js?v=' + BUILD,
   './bgm.mp3',
   './manifest.json',
   './icon-192.png',
@@ -41,9 +45,17 @@ self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== self.location.origin) return;
 
-  e.respondWith(
-    fetch(e.request).catch(() => {
-      return caches.match(e.request);
-    })
-  );
+  if (url.search.indexOf('v=') !== -1) {
+    // Versioned asset (immutable for this build) → cache-first: instant + offline.
+    e.respondWith(
+      caches.match(e.request).then((hit) => hit || fetch(e.request).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE_NAME).then((c) => c.put(e.request, copy));
+        return res;
+      }))
+    );
+  } else {
+    // HTML / unversioned → network-first so new deploys appear right away.
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+  }
 });

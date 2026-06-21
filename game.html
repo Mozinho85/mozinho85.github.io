@@ -11,7 +11,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
     <!-- Shared bootstrap: ad gating + service worker registration -->
-    <script src="app.js"></script>
+    <!-- ?v= cache-buster: keep in sync with sw.js CACHE_NAME on every deploy -->
+    <script src="app.js?v=16"></script>
 
     <style>
         body {
@@ -99,6 +100,37 @@
             border-color: #fff;
             transform: scale(0.96);
         }
+
+        .menu-btn.selected {
+            background: #f7b500;
+            color: #072513;
+            border-color: #fff;
+            box-shadow: 0 0 14px rgba(247, 181, 0, 0.4);
+        }
+
+        .leaderboard-list {
+            width: 92%;
+            flex: 1;
+            min-height: 0;
+            overflow-y: auto;
+            margin-bottom: 12px;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            background: rgba(0,0,0,0.25);
+            -webkit-overflow-scrolling: touch;
+        }
+        .lb-row {
+            display: flex; align-items: center; gap: 8px;
+            padding: 6px 10px; font-size: 14px;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .lb-row:last-child { border-bottom: none; }
+        .lb-rank { width: 30px; text-align: center; font-weight: bold; color: #ddd; flex-shrink: 0; }
+        .lb-flag { width: 26px; height: 17px; border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+        .lb-flag svg { display: block; }
+        .lb-name { flex: 1; font-weight: bold; letter-spacing: 1px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .lb-score { font-weight: bold; color: #4CD964; min-width: 44px; text-align: right; }
+        .lb-me { background: rgba(247,181,0,0.18); outline: 1px solid #f7b500; }
 
         .grid {
             display: grid;
@@ -324,6 +356,17 @@
                 <button class="menu-btn" onclick="selectGameMode('1P')">1 Player Arcade</button>
                 <button class="menu-btn" onclick="selectGameMode('2P')" style="border-color: rgba(90, 200, 250, 0.4);">2 Player Local</button>
                 <button class="menu-btn" onclick="openLockerRoom()" style="border-color: #f7b500; font-size:15px; width:60%;">⚽ Locker Room</button>
+                <button class="menu-btn" onclick="openLeaderboardFromMenu()" style="border-color: #5ac8fa; font-size:15px; width:60%;">🏆 High Scores</button>
+            </div>
+
+            <!-- 2-PLAYER KEEPER DIFFICULTY -->
+            <div id="difficultyScreen" class="screen" style="display: none;">
+                <h1>KEEPER DIFFICULTY</h1>
+                <p>How sharp is the goalkeeper?</p>
+                <button class="menu-btn" data-level="Easy" onclick="setTwoPlayerDifficulty('Easy')">Easy</button>
+                <button class="menu-btn" data-level="Medium" onclick="setTwoPlayerDifficulty('Medium')">Medium</button>
+                <button class="menu-btn" data-level="Hard" onclick="setTwoPlayerDifficulty('Hard')">Hard</button>
+                <div style="font-size: 12px; color: #aaa; margin-top: 12px;">Higher difficulty = faster goalkeeper</div>
             </div>
 
             <!-- NATION SELECTOR -->
@@ -367,7 +410,6 @@
                 <div id="arcadeHUD" style="display: none;">
                     <div>TEAM: <span id="uiTeam" style="color: #f7b500;">---</span></div>
                     <div>SCORE: <span id="uiScore" style="color: #4CD964;">0</span></div>
-                    <div>STREAK: <span id="uiStreak" style="color: #5ac8fa;">0</span></div>
                 </div>
 
                 <div id="p1Board" class="player-board">
@@ -394,6 +436,26 @@
                 <p id="finalScoreText">Final Scoreline: 3 - 2</p>
                 <button class="action-btn" onclick="resetToMainMenu()">MAIN MENU</button>
             </div>
+
+            <!-- 1P SCORE SUBMISSION -->
+            <div id="submitScoreScreen" class="screen" style="display: none;">
+                <h1 style="color:#FF3B30;">OUT OF THE CUP!</h1>
+                <p id="submitScoreText">You scored 0</p>
+                <p style="margin:0 0 8px 0; font-size:13px; color:#aaa;">Enter a name for the leaderboard (max 8):</p>
+                <input id="nameInput" maxlength="8" autocomplete="off" autocapitalize="characters" placeholder="NAME"
+                       style="width:60%; text-align:center; text-transform:uppercase; font-size:22px; font-weight:bold; letter-spacing:3px; padding:12px; border-radius:12px; border:2px solid rgba(255,255,255,0.3); background:rgba(0,0,0,0.3); color:#fff;">
+                <div id="submitMsg" style="font-size:13px; color:#f7b500; height:16px; margin-top:8px;"></div>
+                <button class="action-btn" id="submitScoreBtn" onclick="submitHighScore()">SUBMIT</button>
+                <button class="menu-btn" style="background:transparent; border:none; color:#aaa; font-size:14px; text-decoration:underline; width:auto;" onclick="skipSubmit()">No thanks, skip</button>
+            </div>
+
+            <!-- HIGH SCORE LEADERBOARD -->
+            <div id="leaderboardScreen" class="screen" style="display: none; justify-content:flex-start; padding-top:24px;">
+                <h1>🏆 HIGH SCORES</h1>
+                <div id="lbRankBanner" style="display:none; font-size:15px; font-weight:bold; margin-bottom:8px;"></div>
+                <div id="leaderboardList" class="leaderboard-list"></div>
+                <button class="action-btn" onclick="closeLeaderboard()">MAIN MENU</button>
+            </div>
         </div>
 
         <!-- LIVE BOTTOM BANNER UNIT -->
@@ -411,7 +473,7 @@
 
     </div>
 
-    <script src="data.js"></script>
-    <script src="game.js"></script>
+    <script src="data.js?v=16"></script>
+    <script src="game.js?v=16"></script>
 </body>
 </html>
