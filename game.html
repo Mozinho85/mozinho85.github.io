@@ -12,7 +12,7 @@
 
     <!-- Shared bootstrap: ad gating + service worker registration -->
     <!-- ?v= cache-buster: keep in sync with sw.js CACHE_NAME on every deploy -->
-    <script src="app.js?v=16"></script>
+    <script src="app.js?v=17"></script>
 
     <style>
         body {
@@ -131,6 +131,26 @@
         .lb-name { flex: 1; font-weight: bold; letter-spacing: 1px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .lb-score { font-weight: bold; color: #4CD964; min-width: 44px; text-align: right; }
         .lb-me { background: rgba(247,181,0,0.18); outline: 1px solid #f7b500; }
+
+        .lb-filter {
+            width: 60%; margin-bottom: 10px; padding: 8px 10px;
+            border-radius: 10px; border: 2px solid rgba(255,255,255,0.25);
+            background: rgba(0,0,0,0.4); color: #fff; font-size: 14px; font-weight: bold;
+            text-align: center;
+        }
+
+        #menuPodium { width: 78%; margin-top: 14px; }
+        .podium-title { color: #aaa; font-size: 11px; letter-spacing: 1px; margin-bottom: 5px; }
+        .podium-row {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px; padding: 4px 8px; margin: 4px 0; font-size: 13px;
+        }
+        .pd-rank { font-size: 15px; flex-shrink: 0; }
+        .pd-flag { width: 22px; height: 14px; border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+        .pd-flag svg { display: block; }
+        .pd-name { flex: 1; font-weight: bold; letter-spacing: 1px; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .pd-score { font-weight: bold; color: #4CD964; }
 
         .grid {
             display: grid;
@@ -357,6 +377,7 @@
                 <button class="menu-btn" onclick="selectGameMode('2P')" style="border-color: rgba(90, 200, 250, 0.4);">2 Player Local</button>
                 <button class="menu-btn" onclick="openLockerRoom()" style="border-color: #f7b500; font-size:15px; width:60%;">⚽ Locker Room</button>
                 <button class="menu-btn" onclick="openLeaderboardFromMenu()" style="border-color: #5ac8fa; font-size:15px; width:60%;">🏆 High Scores</button>
+                <div id="menuPodium"></div>
             </div>
 
             <!-- 2-PLAYER KEEPER DIFFICULTY -->
@@ -453,6 +474,7 @@
             <div id="leaderboardScreen" class="screen" style="display: none; justify-content:flex-start; padding-top:24px;">
                 <h1>🏆 HIGH SCORES</h1>
                 <div id="lbRankBanner" style="display:none; font-size:15px; font-weight:bold; margin-bottom:8px;"></div>
+                <select id="lbTeamFilter" class="lb-filter" onchange="onLeaderboardFilterChange()"></select>
                 <div id="leaderboardList" class="leaderboard-list"></div>
                 <button class="action-btn" onclick="closeLeaderboard()">MAIN MENU</button>
             </div>
@@ -473,7 +495,7 @@
 
     </div>
 
-    <script src="data.js?v=16"></script>
-    <script src="game.js?v=16"></script>
+    <script src="data.js?v=17"></script>
+    <script src="game.js?v=17"></script>
 </body>
 </html>

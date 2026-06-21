@@ -1,7 +1,7 @@
 // Bump BUILD on every deploy and keep the ?v= query in index.html / game.html
 // in sync with it. The versioned JS URLs change each build, so browsers always
 // fetch fresh code instead of serving a stale cached copy.
-const BUILD = '16';
+const BUILD = '17';
 const CACHE_NAME = 'penalty-cup-v' + BUILD;
 const ASSETS = [
   './',

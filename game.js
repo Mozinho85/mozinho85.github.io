@@ -5,6 +5,18 @@
         let highStreak = parseInt(localStorage.getItem('wc_high_streak')) || 0;
         let activeBallStyle = localStorage.getItem('wc_active_ball') || 'Classic Pentagons';
 
+        // === Claymation asset overrides ===
+        // Background pitch is now a pre-rendered clay image instead of the procedural
+        // grass/goal. The `goal` hit-box (set in initEntities) is remapped to line up
+        // with where the goal sits inside this image.
+        const clayPitch = new Image();
+        let clayPitchReady = false;
+        clayPitch.onload = () => { clayPitchReady = true; };
+        clayPitch.src = 'assets/pitch-clay.png';
+        // Draws a red outline of the goal hit-box over the pitch for alignment testing.
+        // Set to true to overlay a red outline of the goal hit-box for alignment testing.
+        const CLAY_DEBUG_GOAL = false;
+
         document.getElementById('careerCounter').innerText = careerGoals;
 
         function changeScreen(targetId) {
@@ -282,7 +294,13 @@
         }
 
         function initEntities() {
-            goal = { x: canvas.width * 0.15, y: 140, w: canvas.width * 0.7, h: 130 };
+            // Goal hit-box remapped (as fractions of the canvas) to match the goal
+            // drawn in assets/pitch-clay.png. Tune these if the keeper/net don't line up.
+            // Hit-box = the goal MOUTH (inside the posts), measured from the red marker
+            // in assets/pitch-clay-goal.png. Ball overlapping a post edge reads as
+            // woodwork (same logic as the original game); only inside-the-posts scores.
+            goal = { x: canvas.width * 0.096, y: canvas.height * 0.334, w: canvas.width * 0.813, h: canvas.height * 0.190 };
+            const goalLineY = Math.round(goal.y + goal.h * 0.77);   // where the keeper stands
 
             ball = {
                 startX: canvas.width / 2, startY: canvas.height - 120,
@@ -316,11 +334,11 @@
             }
 
             keeper = {
-                x: canvas.width / 2, baselineY: 240, y: 240, w: 54, h: 70,
+                x: canvas.width / 2, baselineY: goalLineY, y: goalLineY, w: 54, h: 70,
                 dir: Math.random() < 0.5 ? 1 : -1, speed: initialSpeed,
-                state: 'idling', targetX: canvas.width / 2, targetY: 240,
+                state: 'idling', targetX: canvas.width / 2, targetY: goalLineY,
                 vx: 0, vy: 0, angle: 0, diveDir: 0, diveReach: 0,
-                diveStartX: canvas.width / 2, diveStartY: 240,
+                diveStartX: canvas.width / 2, diveStartY: goalLineY,
                 scale: 1, madeSave: false, celebPhase: 0
             };
 
@@ -765,33 +783,29 @@
                 defenderNationObj = (currentKicker === 1) ? player2Nation : player1Nation;
             }
 
-            drawCrowd(kickerNationObj, defenderNationObj);
-
-            let pitchGrad = ctx.createLinearGradient(0, goal.y, 0, canvas.height);
-            pitchGrad.addColorStop(0, '#0a230c'); pitchGrad.addColorStop(0.3, '#113b15'); pitchGrad.addColorStop(1, '#1e5e25');   
-            ctx.fillStyle = pitchGrad; ctx.fillRect(0, goal.y, canvas.width, canvas.height - goal.y);
-
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
-            for (let i = 0; i < 6; i++) {
-                if (i % 2 === 0) {
-                    ctx.beginPath(); ctx.moveTo(0, goal.y + goal.h + (i * 40)); ctx.lineTo(canvas.width, goal.y + goal.h + (i * 40));
-                    ctx.lineTo(canvas.width, goal.y + goal.h + ((i + 1) * 70)); ctx.lineTo(0, goal.y + goal.h + ((i + 1) * 70)); ctx.fill();
+            // === Claymation pitch: blit the clay image as the full background ===
+            // The grass, goal frame and net all live inside the image now. The keeper
+            // and ball still draw on top. A faint debug outline shows the goal hit-box
+            // so we can confirm alignment (toggle with CLAY_DEBUG_GOAL).
+            if (clayPitchReady) {
+                ctx.drawImage(clayPitch, 0, 0, canvas.width, canvas.height);
+                if (CLAY_DEBUG_GOAL) {
+                    ctx.strokeStyle = 'rgba(255,0,0,0.7)'; ctx.lineWidth = 2;
+                    ctx.strokeRect(goal.x, goal.y, goal.w, goal.h);
                 }
+            } else {
+                // Fallback to the original procedural pitch until the image loads.
+                drawCrowd(kickerNationObj, defenderNationObj);
+                let pitchGrad = ctx.createLinearGradient(0, goal.y, 0, canvas.height);
+                pitchGrad.addColorStop(0, '#0a230c'); pitchGrad.addColorStop(0.3, '#113b15'); pitchGrad.addColorStop(1, '#1e5e25');
+                ctx.fillStyle = pitchGrad; ctx.fillRect(0, goal.y, canvas.width, canvas.height - goal.y);
+                ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
+                ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1;
+                for (let x = goal.x; x <= goal.x + goal.w; x += 10) { ctx.beginPath(); ctx.moveTo(x, goal.y); ctx.lineTo(x, goal.y + goal.h); ctx.stroke(); }
+                for (let y = goal.y; y <= goal.y + goal.h; y += 10) { ctx.beginPath(); ctx.moveTo(goal.x, y); ctx.lineTo(goal.x + goal.w, y); ctx.stroke(); }
+                ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.beginPath();
+                ctx.moveTo(goal.x, goal.y + goal.h); ctx.lineTo(goal.x, goal.y); ctx.lineTo(goal.x + goal.w, goal.y); ctx.lineTo(goal.x + goal.w, goal.y + goal.h); ctx.stroke();
             }
-
-            ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 3;
-            ctx.beginPath(); ctx.moveTo(goal.x - 40, goal.y + goal.h); ctx.lineTo(0, canvas.height - 50);
-            ctx.moveTo(goal.x + goal.w + 40, goal.y + goal.h); ctx.lineTo(canvas.width, canvas.height - 50);
-            ctx.moveTo(0, canvas.height - 50); ctx.lineTo(canvas.width, canvas.height - 50); ctx.stroke();
-            ctx.fillStyle = 'rgba(255,255,255,0.8)'; ctx.beginPath(); ctx.arc(canvas.width/2, canvas.height - 120, 6, 0, Math.PI * 2); ctx.fill();
-
-            ctx.fillStyle = 'rgba(0,0,0,0.45)'; ctx.fillRect(goal.x, goal.y, goal.w, goal.h);
-            ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.lineWidth = 1;
-            for (let x = goal.x; x <= goal.x + goal.w; x += 10) { ctx.beginPath(); ctx.moveTo(x, goal.y); ctx.lineTo(x, goal.y + goal.h); ctx.stroke(); }
-            for (let y = goal.y; y <= goal.y + goal.h; y += 10) { ctx.beginPath(); ctx.moveTo(goal.x, y); ctx.lineTo(goal.x + goal.w, y); ctx.stroke(); }
-
-            ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.beginPath();
-            ctx.moveTo(goal.x, goal.y + goal.h); ctx.lineTo(goal.x, goal.y); ctx.lineTo(goal.x + goal.w, goal.y); ctx.lineTo(goal.x + goal.w, goal.y + goal.h); ctx.stroke();
             ctx.fillStyle = 'rgba(0,0,0,0.35)'; ctx.beginPath();
             let shadowY = (gameState === 'rebounding') ? ball.y + 25 : ball.startY + ((goal.y + goal.h + 10) - ball.startY) * ball.progress;
             ctx.ellipse(ball.x, shadowY, ball.radius * 1.1, ball.radius * 0.4, 0, 0, Math.PI * 2); ctx.fill();
@@ -1413,6 +1427,7 @@
 
         function resetToMainMenu() {
             changeScreen('splashScreen');
+            loadMenuPodium();
         }
 
         // ========================================================================
@@ -1487,20 +1502,32 @@
         function skipSubmit() { openLeaderboard({}); }
 
         // --- Leaderboard rendering ---
+        let lbOpts = {}, lbFilter = '';
+
         async function openLeaderboard(opts) {
-            opts = opts || {};
+            lbOpts = opts || {}; lbFilter = '';
+            const sel = document.getElementById('lbTeamFilter'); if (sel) sel.value = '';
             changeScreen('leaderboardScreen');
-            const list = document.getElementById('leaderboardList');
             const banner = document.getElementById('lbRankBanner');
-            banner.style.display = opts.myRank ? 'block' : 'none';
-            if (opts.myRank) banner.innerHTML = `Your position: <span style="color:#f7b500;">#${opts.myRank}</span> — ${opts.highlightScore}`;
+            banner.style.display = lbOpts.myRank ? 'block' : 'none';
+            if (lbOpts.myRank) banner.innerHTML = `Your position: <span style="color:#f7b500;">#${lbOpts.myRank}</span> — ${lbOpts.highlightScore}`;
+            await loadLeaderboardList();
+        }
+
+        async function loadLeaderboardList() {
+            const list = document.getElementById('leaderboardList');
             list.innerHTML = '<div style="padding:20px;color:#aaa;">Loading…</div>';
             try {
-                const rows = await sbFetchTop(1000);
-                renderLeaderboard(rows, opts);
+                const rows = await sbFetchTop(1000, lbFilter);
+                renderLeaderboard(rows, lbOpts);
             } catch (e) {
                 list.innerHTML = '<div style="padding:20px;color:#FF3B30;">Could not load scores (offline?).</div>';
             }
+        }
+
+        function onLeaderboardFilterChange() {
+            lbFilter = document.getElementById('lbTeamFilter').value;
+            loadLeaderboardList();
         }
 
         function renderLeaderboard(rows, opts) {
@@ -1531,4 +1558,29 @@
         }
 
         function openLeaderboardFromMenu() { openLeaderboard({}); }
-        function closeLeaderboard() { changeScreen('splashScreen'); }
+        function closeLeaderboard() { changeScreen('splashScreen'); loadMenuPodium(); }
+
+        // Populate the team-filter dropdown from the nations list (once).
+        function populateTeamFilter() {
+            const sel = document.getElementById('lbTeamFilter');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">All Teams</option>' +
+                nations.map(n => `<option value="${n.tag}">${n.name}</option>`).join('');
+        }
+
+        // Top-3 podium preview shown on the main menu.
+        async function loadMenuPodium() {
+            const el = document.getElementById('menuPodium');
+            if (!el) return;
+            try {
+                const rows = await sbFetchTop(3, '');
+                if (!rows.length) { el.innerHTML = ''; return; }
+                const medals = ['🥇', '🥈', '🥉'];
+                el.innerHTML = '<div class="podium-title">TOP SCORES</div>' + rows.map((r, i) =>
+                    `<div class="podium-row"><span class="pd-rank">${medals[i]}</span><span class="pd-flag">${flagSVG(r.team || '')}</span><span class="pd-name">${escapeHtml(r.name)}</span><span class="pd-score">${r.score}</span></div>`
+                ).join('');
+            } catch (e) { el.innerHTML = ''; }
+        }
+
+        populateTeamFilter();
+        loadMenuPodium();
