@@ -814,8 +814,12 @@
             if (ball.inNet) drawBall();
 
             // ==========================================
-            // GOALKEEPER
+            // GOALKEEPER — 3D model layer if the defending team's rig is loaded
+            // (lazy-loaded per team); otherwise the original 2D vector keeper.
             // ==========================================
+            if (window.Keeper3D && Keeper3D.frame(keeper, canvas, goal, defenderNationObj, gameState)) {
+                ctx.drawImage(Keeper3D.canvas, 0, 0, canvas.width, canvas.height);
+            } else {
             ctx.save();
             ctx.translate(keeper.x, keeper.y);
 
@@ -925,6 +929,7 @@
             ctx.beginPath(); ctx.arc(3, -45, 9.5, -0.5 * Math.PI, 0.4 * Math.PI); ctx.fill();
 
             ctx.restore();
+            } // end 2D-keeper fallback
 
             // Ball draws in FRONT of the keeper during flight/rebounds, but behind it
             // once it's nestling in the net (already drawn above when inNet).
@@ -1247,8 +1252,13 @@
             resizeCanvas();
             
             if (activeGameMode === "1P") {
+                // Arcade keeper: a random OTHER nation (never the player's own team),
+                // so it pulls a different team's 3D model each run.
+                const others = nations.filter(n => n !== player1Nation);
+                player2Nation = others[Math.floor(Math.random() * others.length)];
+
                 document.getElementById('turnIndicator').style.display = "none";
-                document.getElementById('p1Board').style.display = "none"; 
+                document.getElementById('p1Board').style.display = "none";
                 document.getElementById('p2Board').style.display = "none";
                 document.getElementById('arcadeHUD').style.display = "flex";
                 document.getElementById('uiTeam').innerText = player1Nation.tag;

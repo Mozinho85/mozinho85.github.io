@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -12,7 +12,7 @@
 
     <!-- Shared bootstrap: ad gating + service worker registration -->
     <!-- ?v= cache-buster: keep in sync with sw.js CACHE_NAME on every deploy -->
-    <script src="app.js?v=17"></script>
+    <script src="app.js?v=19"></script>
 
     <style>
         body {
@@ -245,12 +245,12 @@
             z-index: 5; background: #f7b500; color: #072513; font-weight: bold;
             padding: 6px 20px; border-radius: 20px; font-size: 14px;
             text-transform: uppercase; box-shadow: 0 4px 10px rgba(0,0,0,0.4);
-            pointer-events: none; display: none;
+            pointer-events: none; display: none; white-space: nowrap;
         }
 
         #scoreboardUI {
             position: absolute;
-            top: 55px; width: 100%;
+            top: 64px; width: 100%;
             display: flex;
             justify-content: space-between;
             font-size: 13px;
@@ -367,7 +367,7 @@
             <div id="audioDebug">Audio Status: Initializing...</div>
             <audio id="bgMusic" src="bgm.mp3" loop preload="auto"></audio>
 
-            <div id="extraLifeBanner">⭐ EXTRA LIFE! ⭐</div>
+            <div id="extraLifeBanner">â­ EXTRA LIFE! â­</div>
 
             <!-- SPLASH / MAIN MENU -->
             <div id="splashScreen" class="screen">
@@ -375,8 +375,8 @@
                 <div style="font-size: 12px; color: #aaa; margin-bottom: 15px;">Career Goals Scoreline: <span id="careerCounter" style="color:#4CD964; font-weight:bold;">0</span></div>
                 <button class="menu-btn" onclick="selectGameMode('1P')">1 Player Arcade</button>
                 <button class="menu-btn" onclick="selectGameMode('2P')" style="border-color: rgba(90, 200, 250, 0.4);">2 Player Local</button>
-                <button class="menu-btn" onclick="openLockerRoom()" style="border-color: #f7b500; font-size:15px; width:60%;">⚽ Locker Room</button>
-                <button class="menu-btn" onclick="openLeaderboardFromMenu()" style="border-color: #5ac8fa; font-size:15px; width:60%;">🏆 High Scores</button>
+                <button class="menu-btn" onclick="openLockerRoom()" style="border-color: #f7b500; font-size:15px; width:60%;">âš½ Locker Room</button>
+                <button class="menu-btn" onclick="openLeaderboardFromMenu()" style="border-color: #5ac8fa; font-size:15px; width:60%;">ðŸ† High Scores</button>
                 <div id="menuPodium"></div>
             </div>
 
@@ -412,7 +412,7 @@
                 <p style="margin-bottom: 5px;">You missed the shot!</p>
                 <div style="font-size: 18px; color:#fff;">Current Streak: <span id="continueStreakVal" style="color:#f7b500; font-weight:bold;">0</span></div>
                 <div id="timerBox">5</div>
-                <button class="menu-btn" id="adContinueBtn" style="background:#f7b500; color:#072513; border:none;" onclick="triggerAdRecovery()">🎬 WATCH AD TO CONTINUE</button>
+                <button class="menu-btn" id="adContinueBtn" style="background:#f7b500; color:#072513; border:none;" onclick="triggerAdRecovery()">ðŸŽ¬ WATCH AD TO CONTINUE</button>
                 <div style="font-size: 12px; color: #ccc; margin-top: 5px;" id="continuesLeftTxt">Saves remaining: 3 / 3</div>
                 <button class="menu-btn" style="background:transparent; border:none; color:#aaa; font-size:14px; text-decoration:underline;" onclick="skipRecovery()">No thanks, end match</button>
             </div>
@@ -472,7 +472,7 @@
 
             <!-- HIGH SCORE LEADERBOARD -->
             <div id="leaderboardScreen" class="screen" style="display: none; justify-content:flex-start; padding-top:24px;">
-                <h1>🏆 HIGH SCORES</h1>
+                <h1>ðŸ† HIGH SCORES</h1>
                 <div id="lbRankBanner" style="display:none; font-size:15px; font-weight:bold; margin-bottom:8px;"></div>
                 <select id="lbTeamFilter" class="lb-filter" onchange="onLeaderboardFilterChange()"></select>
                 <div id="leaderboardList" class="leaderboard-list"></div>
@@ -495,7 +495,16 @@
 
     </div>
 
-    <script src="data.js?v=17"></script>
-    <script src="game.js?v=17"></script>
+    <script src="data.js?v=19"></script>
+    <script src="game.js?v=19"></script>
+    <!-- 3D keeper layer (ES module; sets window.Keeper3D). Loads three.js from CDN. -->
+    <script type="importmap">
+    { "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    } }
+    </script>
+    <script type="module" src="keeper3d.js?v=3"></script>
 </body>
 </html>
+
